@@ -36,7 +36,7 @@ type balance struct {
 //   - domain.ErrServerInternal
 //   - domain.ErrUserIsNotAuthorized
 func (b *balance) Get(ctx context.Context) (*domain.Balance, error) {
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't get balance - logger not found in context", domain.ErrServerInternal)
 		return nil, fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
@@ -76,7 +76,7 @@ func (b *balance) getBalance(ctx context.Context, userID int) (*domain.UserBalan
 //   - domain.ErrNotEnoughPoints
 //   - domain.ErrWrongOrderNumber
 func (b *balance) Withdraw(ctx context.Context, withdraw *domain.WithdrawData) error {
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't withdraw - logger not found in context", domain.ErrServerInternal)
 		return fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
@@ -142,7 +142,7 @@ func (b *balance) Withdraw(ctx context.Context, withdraw *domain.WithdrawData) e
 //   - domain.ErrUserIsNotAuthorized
 //   - domain.ErrNotFound
 func (b *balance) Withdrawals(ctx context.Context) ([]domain.WithdrawalData, error) {
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: withdrawals - logger not found in context", domain.ErrServerInternal)
 		return nil, fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
@@ -267,7 +267,7 @@ Loop:
 func (b *balance) PoolOrders(ctx context.Context) {
 	b.once.Do(func() {
 		go func() {
-			logger, err := domain.GetLogger(ctx)
+			logger, err := domain.GetCtxLogger(ctx)
 			if err != nil {
 				fmt.Printf("balance.PoolOrders error - logger not found")
 				return

@@ -62,7 +62,7 @@ const minPassEntropyBits = 60
 //   - domain.ErrLoginIsBusy
 func (a *auth) Register(ctx context.Context, regData *domain.RegistrationData) error {
 
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't register - logger not found in context", domain.ErrServerInternal)
 		return fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
@@ -126,7 +126,7 @@ func (a *auth) Register(ctx context.Context, regData *domain.RegistrationData) e
 //   - domain.ErrDataFormat
 //   - domain.ErrWrongLoginPassword
 func (a *auth) Login(ctx context.Context, userData *domain.AuthentificationData) (domain.TokenString, error) {
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't authentificate - logger not found in context", domain.ErrServerInternal)
 		return "", fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
@@ -187,7 +187,7 @@ func (a *auth) Login(ctx context.Context, userData *domain.AuthentificationData)
 //   - domain.ErrServerInternal
 //   - domain.ErrAuthDataIncorrect
 func (a *auth) Authorize(ctx context.Context, tokenString domain.TokenString) (*domain.AuthData, error) {
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't authorize - logger not found in context", domain.ErrServerInternal)
 		return nil, fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)

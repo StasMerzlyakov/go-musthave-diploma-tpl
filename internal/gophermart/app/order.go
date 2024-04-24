@@ -55,7 +55,7 @@ type order struct {
 //  - domain.ErrServerInternal - внутренняя ошибка
 
 func (ord *order) New(ctx context.Context, number domain.OrderNumber) error {
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't upload - logger not found in context", domain.ErrServerInternal)
 		return fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
@@ -99,7 +99,7 @@ func (ord *order) New(ctx context.Context, number domain.OrderNumber) error {
 //   - domain.ErrUserIsNotAuthorized
 //   - domain.ErrServerInternal
 func (ord *order) All(ctx context.Context) ([]domain.OrderData, error) {
-	logger, err := domain.GetLogger(ctx)
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't upload - logger not found in context", domain.ErrServerInternal)
 		return nil, fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
@@ -273,7 +273,7 @@ Loop:
 func (ord *order) PoolAcrualSystem(ctx context.Context) {
 	ord.once.Do(func() {
 		go func() {
-			logger, err := domain.GetLogger(ctx)
+			logger, err := domain.GetCtxLogger(ctx)
 			if err != nil {
 				fmt.Printf("app.orderPool error - logger not found")
 				return
