@@ -42,7 +42,7 @@ func EnrichWithAuthData(ctx context.Context, authData *AuthData) (context.Contex
 		return ctx, fmt.Errorf("%w: authData is nil", ErrServerInternal)
 	}
 
-	curLogger, err := GetLogger(ctx)
+	curLogger, err := GetCtxLogger(ctx)
 	if err != nil {
 		return ctx, fmt.Errorf("can't get logger %w", err)
 	}
@@ -85,7 +85,7 @@ func GetUserID(ctx context.Context) (int, error) {
 	return a.UserID, nil
 }
 
-func GetLogger(ctx context.Context) (Logger, error) {
+func GetCtxLogger(ctx context.Context) (Logger, error) {
 	if v := ctx.Value(KeyLogger); v != nil {
 		lg, ok := v.(Logger)
 		if !ok {

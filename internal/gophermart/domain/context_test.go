@@ -76,7 +76,7 @@ func TestEnrichContext(t *testing.T) {
 
 	require.Equal(t, authData.UserID, aData.UserID)
 
-	log, err := domain.GetLogger(enrichedCtx)
+	log, err := domain.GetCtxLogger(enrichedCtx)
 	require.NoError(t, err)
 
 	log.Errorw("test errorw", "msg", "hello")
@@ -143,7 +143,7 @@ func TestEnrichContextNotAuthorized(t *testing.T) {
 
 	require.Nil(t, aData)
 
-	log, err := domain.GetLogger(enrichedCtx)
+	log, err := domain.GetCtxLogger(enrichedCtx)
 	require.NoError(t, err)
 
 	log.Errorw("test errorw", "msg", "hello")
