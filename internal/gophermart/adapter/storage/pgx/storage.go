@@ -136,3 +136,7 @@ func (st *storage) init(ctx context.Context, logger domain.Logger) error {
 func (st *storage) Ping(ctx context.Context) error {
 	return st.pPool.Ping(ctx)
 }
+
+func (st *storage) Close() {
+	st.pPool.Close()
+}
