@@ -8,6 +8,7 @@ import (
 	"github.com/StasMerzlyakov/gophermart/internal/config"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/storage/pgx"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +22,8 @@ func TestOrderFunctions(t *testing.T) {
 	require.NoError(t, err)
 
 	logger := createLogger()
-	storage := pgx.NewStorage(ctx, logger, &config.GophermartConfig{
+	domain.SetMainLogger(logger)
+	storage := pgx.NewStorage(ctx, &config.GophermartConfig{
 		MaxConns:             5,
 		DatabaseUri:          connString,
 		ProcessingLimit:      5,
@@ -39,6 +41,10 @@ func TestOrderFunctions(t *testing.T) {
 	err = clear(ctx)
 	require.NoError(t, err)
 
+	// Все бизнес-операции выполняются с ctx, содержащим logger
+	requestUUID := uuid.New()
+	loggedCtx := domain.EnrichWithRequestIDLogger(ctx, requestUUID, logger)
+
 	user1 := "user1"
 
 	ldata1 := &domain.LoginData{
@@ -47,7 +53,7 @@ func TestOrderFunctions(t *testing.T) {
 		Salt:  "",
 	}
 
-	user1ID, err := storage.RegisterUser(ctx, ldata1)
+	user1ID, err := storage.RegisterUser(loggedCtx, ldata1)
 	require.NoError(t, err)
 
 	user2 := "user2"
@@ -58,7 +64,7 @@ func TestOrderFunctions(t *testing.T) {
 		Salt:  "",
 	}
 
-	user2ID, err := storage.RegisterUser(ctx, ldata2)
+	user2ID, err := storage.RegisterUser(loggedCtx, ldata2)
 	require.NoError(t, err)
 	require.NotEqual(t, user1ID, user2ID)
 
@@ -72,10 +78,10 @@ func TestOrderFunctions(t *testing.T) {
 		Status:     domain.OrderStratusNew,
 		UploadedAt: now,
 	}
-	err = storage.Upload(ctx, orderData)
+	err = storage.Upload(loggedCtx, orderData)
 	require.NoError(t, err)
 
-	orderDatas, err := storage.Orders(ctx, user1ID)
+	orderDatas, err := storage.Orders(loggedCtx, user1ID)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(orderDatas))
@@ -92,10 +98,10 @@ func TestOrderFunctions(t *testing.T) {
 	// require.True(t, time.Time(now).Equal(time.Time(oD.UploadedAt)))
 
 	accrualVal := 10.9
-	err = storage.UpdateOrder(ctx, orderNum, domain.OrderStratusProcessing, &accrualVal)
+	err = storage.UpdateOrder(loggedCtx, orderNum, domain.OrderStratusProcessing, &accrualVal)
 	require.NoError(t, err)
 
-	orderDatas, err = storage.Orders(ctx, user1ID)
+	orderDatas, err = storage.Orders(loggedCtx, user1ID)
 	require.NoError(t, err)
 
 	require.Equal(t, 1, len(orderDatas))
@@ -107,37 +113,37 @@ func TestOrderFunctions(t *testing.T) {
 	require.NotNil(t, oD.Accrual)
 	require.Equal(t, accrualVal, *oD.Accrual)
 
-	orderDatas, err = storage.Orders(ctx, user2ID)
+	orderDatas, err = storage.Orders(loggedCtx, user2ID)
 	require.NoError(t, err)
 	require.Empty(t, orderDatas)
 
 	// Проверка уникальности номера
-	err = storage.Upload(ctx, orderData)
+	err = storage.Upload(loggedCtx, orderData)
 	require.ErrorIs(t, err, domain.ErrOrderNumberAlreadyUploaded)
 
 	orderData.UserID = user2ID
-	err = storage.Upload(ctx, orderData)
+	err = storage.Upload(loggedCtx, orderData)
 	require.ErrorIs(t, err, domain.ErrDublicateOrderNumber)
 
-	orderDatas, err = storage.Orders(ctx, user2ID)
+	orderDatas, err = storage.Orders(loggedCtx, user2ID)
 	require.NoError(t, err)
 	require.Empty(t, orderDatas)
 
 	// Проверка получения данных по статусу
-	data, err := storage.GetByStatus(ctx, domain.OrderStratusProcessed)
+	data, err := storage.GetByStatus(loggedCtx, domain.OrderStratusProcessed)
 	require.NoError(t, err)
 	require.Empty(t, data)
 
 	orderData.UserID = user2ID
 	orderData.Number = "2345671"
-	err = storage.Upload(ctx, orderData)
+	err = storage.Upload(loggedCtx, orderData)
 	require.NoError(t, err)
 
-	data, err = storage.GetByStatus(ctx, domain.OrderStratusProcessing)
+	data, err = storage.GetByStatus(loggedCtx, domain.OrderStratusProcessing)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(data)) // user1ID
 
-	data, err = storage.GetByStatus(ctx, domain.OrderStratusNew)
+	data, err = storage.GetByStatus(loggedCtx, domain.OrderStratusNew)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(data)) // user2ID
 
@@ -153,6 +159,6 @@ func TestOrderFunctions(t *testing.T) {
 		Accrual: domain.Float64Ptr(65.),
 	}
 
-	err = storage.UpdateBatch(ctx, []domain.OrderData{ordData1, ordData2})
+	err = storage.UpdateBatch(loggedCtx, []domain.OrderData{ordData1, ordData2})
 	require.NoError(t, err)
 }

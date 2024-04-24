@@ -8,6 +8,7 @@ import (
 	"github.com/StasMerzlyakov/gophermart/internal/config"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/storage/pgx"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +22,8 @@ func TestBalanceOperations(t *testing.T) {
 	require.NoError(t, err)
 
 	logger := createLogger()
-	storage := pgx.NewStorage(ctx, logger, &config.GophermartConfig{
+	domain.SetMainLogger(logger)
+	storage := pgx.NewStorage(ctx, &config.GophermartConfig{
 		MaxConns:             5,
 		DatabaseUri:          connString,
 		ProcessingLimit:      5,
@@ -39,10 +41,14 @@ func TestBalanceOperations(t *testing.T) {
 	err = clear(ctx)
 	require.NoError(t, err)
 
+	// Все бизнес-операции выполняются с ctx, содержащим logger
+	requestUUID := uuid.New()
+	loggedCtx := domain.EnrichWithRequestIDLogger(ctx, requestUUID, logger)
+
 	login := "user123"
 	passHash := "hash"
 	salt := "salt"
-	ldata, err := storage.GetUserData(ctx, login)
+	ldata, err := storage.GetUserData(loggedCtx, login)
 	require.NoError(t, err)
 	require.Nil(t, ldata)
 
@@ -52,10 +58,10 @@ func TestBalanceOperations(t *testing.T) {
 		Salt:  salt,
 	}
 
-	userID, err := storage.RegisterUser(ctx, ldata)
+	userID, err := storage.RegisterUser(loggedCtx, ldata)
 	require.NoError(t, err)
 
-	bal, err := storage.Balance(ctx, userID)
+	bal, err := storage.Balance(loggedCtx, userID)
 	require.NoError(t, err)
 	require.NotNil(t, bal)
 
@@ -73,25 +79,25 @@ func TestBalanceOperations(t *testing.T) {
 		Status:     domain.OrderStratusNew,
 		UploadedAt: now,
 	}
-	err = storage.Upload(ctx, orderData)
+	err = storage.Upload(loggedCtx, orderData)
 	require.NoError(t, err)
 
 	accrual := domain.Float64Ptr(50.)
-	err = storage.UpdateOrder(ctx, orderNum, domain.OrderStratusProcessing, accrual)
+	err = storage.UpdateOrder(loggedCtx, orderNum, domain.OrderStratusProcessing, accrual)
 	require.NoError(t, err)
 
 	orderData.Accrual = accrual
 	orderData.Status = domain.OrderStratusProcessed
 
 	bal.Current = *accrual
-	err = storage.UpdateBalanceByOrder(ctx, bal, orderData)
+	err = storage.UpdateBalanceByOrder(loggedCtx, bal, orderData)
 	require.NoError(t, err)
 
-	bal2, err := storage.Balance(ctx, userID)
+	bal2, err := storage.Balance(loggedCtx, userID)
 	require.NoError(t, err)
 
 	require.Equal(t, bal.Current, bal2.Current)
 
-	err = storage.UpdateBalanceByOrder(ctx, bal, orderData)
+	err = storage.UpdateBalanceByOrder(loggedCtx, bal, orderData)
 	require.ErrorIs(t, err, domain.ErrNotFound)
 }

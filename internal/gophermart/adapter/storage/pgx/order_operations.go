@@ -12,8 +12,14 @@ import (
 
 func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.Upload error: can't extract logger")
+		return err
+	}
+
 	if data == nil {
-		st.logger.Errorw("storage.Upload", "err", "data is nil")
+		logger.Errorw("storage.Upload", "err", "data is nil")
 		return domain.ErrServerInternal
 	}
 
@@ -28,7 +34,7 @@ func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 			var userId int
 			err = st.pPool.QueryRow(ctx, `select userId from orderData where number = $1`, data.Number).Scan(&userId)
 			if err != nil {
-				st.logger.Infow("storage.Upload", "err", err.Error())
+				logger.Infow("storage.Upload", "err", err.Error())
 				return domain.ErrServerInternal
 			}
 			if userId == data.UserID {
@@ -37,7 +43,7 @@ func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 				return domain.ErrDublicateOrderNumber
 			}
 		} else {
-			st.logger.Infow("storage.Upload", "err", err.Error())
+			logger.Infow("storage.Upload", "err", err.Error())
 			return domain.ErrServerInternal
 		}
 	}
@@ -48,13 +54,19 @@ func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, error) {
 	var orders []domain.OrderData
 
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.Orders error: can't extract logger")
+		return nil, err
+	}
+
 	rows, err := st.pPool.Query(ctx,
 		`select number, userId, status, accrual, uploaded_at from orderData where userId = $1`,
 		userID,
 	)
 
 	if err != nil {
-		st.logger.Infow("storage.Orders", "err", err.Error())
+		logger.Infow("storage.Orders", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 
@@ -65,7 +77,7 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 		var uploaded time.Time
 		err = rows.Scan(&data.Number, &data.UserID, &data.Status, &data.Accrual, &uploaded)
 		if err != nil {
-			st.logger.Infow("storage.Orders", "err", err.Error())
+			logger.Infow("storage.Orders", "err", err.Error())
 			return nil, domain.ErrServerInternal
 		}
 		data.UploadedAt = domain.RFC3339Time(uploaded)
@@ -75,10 +87,10 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 	err = rows.Err()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			st.logger.Infow("storage.Orders", "status", "not found")
+			logger.Infow("storage.Orders", "status", "not found")
 			return nil, domain.ErrNotFound
 		}
-		st.logger.Infow("storage.Orders", "err", err.Error())
+		logger.Infow("storage.Orders", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 
@@ -91,8 +103,14 @@ func (st *storage) UpdateOrder(ctx context.Context, number domain.OrderNumber, s
 		string(status), accrual, string(number),
 	)
 
+	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
-		st.logger.Infow("storage.UpdateOrder", "err", err.Error())
+		fmt.Printf("storage.UpdateOrder error: can't extract logger")
+		return err
+	}
+
+	if err != nil {
+		logger.Infow("storage.UpdateOrder", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -105,7 +123,7 @@ func (st *storage) UpdateOrder(ctx context.Context, number domain.OrderNumber, s
 	err = rows.Err()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			st.logger.Infow("storage.UpdateOrder", "status", "not found")
+			logger.Infow("storage.UpdateOrder", "status", "not found")
 			return domain.ErrNotFound
 		}
 		return fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
@@ -114,6 +132,12 @@ func (st *storage) UpdateOrder(ctx context.Context, number domain.OrderNumber, s
 }
 
 func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) ([]domain.OrderData, error) {
+
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.GetByStatus error: can't extract logger")
+		return nil, err
+	}
 
 	var forProcessing []domain.OrderData
 
@@ -130,7 +154,7 @@ func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) (
 	)
 
 	if err != nil {
-		st.logger.Infow("storage.ForProcessing", "err", err.Error())
+		logger.Infow("storage.ForProcessing", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 
@@ -141,7 +165,7 @@ func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) (
 		var uploaded time.Time
 		err = rows.Scan(&data.Number, &data.UserID, &data.Status, &data.Accrual, &uploaded)
 		if err != nil {
-			st.logger.Infow("storage.ForProcessing", "err", err.Error())
+			logger.Infow("storage.ForProcessing", "err", err.Error())
 			return nil, domain.ErrServerInternal
 		}
 		data.UploadedAt = domain.RFC3339Time(uploaded)
@@ -151,22 +175,28 @@ func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) (
 	err = rows.Err()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			st.logger.Infow("storage.ForProcessing", "status", "not found")
+			logger.Infow("storage.ForProcessing", "status", "not found")
 			return nil, nil
 		}
-		st.logger.Infow("storage.ForProcessing", "err", err.Error())
+		logger.Infow("storage.ForProcessing", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
-	st.logger.Infow("storage.ForProcessing", "status", "found", "count", len(forProcessing))
+	logger.Infow("storage.ForProcessing", "status", "found", "count", len(forProcessing))
 
 	return forProcessing, nil
 }
 
 func (st *storage) UpdateBatch(ctx context.Context, orders []domain.OrderData) error {
 
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.UpdateBatch error: can't extract logger")
+		return err
+	}
+
 	tx, err := st.pPool.Begin(ctx)
 	if err != nil {
-		st.logger.Errorw("storage.UpdateBatch", "err", err.Error())
+		logger.Errorw("storage.UpdateBatch", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -186,12 +216,12 @@ func (st *storage) UpdateBatch(ctx context.Context, orders []domain.OrderData) e
 	err = tx.SendBatch(context.Background(), batch).Close()
 
 	if err != nil {
-		st.logger.Infow("storage.UpdateBatch", "err", err.Error())
+		logger.Infow("storage.UpdateBatch", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		st.logger.Infow("storage.UpdateBatch", "err", err.Error())
+		logger.Infow("storage.UpdateBatch", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 

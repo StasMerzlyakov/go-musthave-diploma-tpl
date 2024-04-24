@@ -11,7 +11,14 @@ import (
 )
 
 func (st *storage) Balance(ctx context.Context, userID int) (*domain.UserBalance, error) {
-	st.logger.Infow("storage.Balance", "status", "start")
+
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.Balance error: can't extract logger")
+		return nil, err
+	}
+
+	logger.Infow("storage.Balance", "status", "start")
 
 	var userBalance domain.UserBalance
 
@@ -26,29 +33,36 @@ func (st *storage) Balance(ctx context.Context, userID int) (*domain.UserBalance
 			select balanceId, userId, current, withdrawn, release from balance
 			where userId=$1;`,
 		userID).Scan(&userBalance.BalanceId, &userBalance.UserID, &userBalance.Current, &userBalance.Release, &userBalance.Release); err == nil {
-		st.logger.Infow("storage.Balance", "status", "success")
+		logger.Infow("storage.Balance", "status", "success")
 		return &userBalance, nil
 	} else {
-		st.logger.Errorw("storage.Balance", "err", err.Error())
+		logger.Errorw("storage.Balance", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 }
 
 func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.UserBalance, orderData *domain.OrderData) error {
+
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.UpdateBalanceByOrder error: can't extract logger")
+		return err
+	}
+
 	if balance == nil {
-		st.logger.Errorw("storage.UpdateBalanceByOrder", "err", "balance is nil")
+		logger.Errorw("storage.UpdateBalanceByOrder", "err", "balance is nil")
 		return fmt.Errorf("%w: balance is nil", domain.ErrServerInternal)
 	}
 
 	if orderData == nil {
-		st.logger.Errorw("storage.UpdateBalanceByOrder", "err", "orderData is nil")
+		logger.Errorw("storage.UpdateBalanceByOrder", "err", "orderData is nil")
 		return fmt.Errorf("%w: orderData is nil", domain.ErrServerInternal)
 	}
 
 	tx, err := st.pPool.Begin(ctx)
 
 	if err != nil {
-		st.logger.Errorw("storage.UpdateBalanceByOrder", "err", err.Error())
+		logger.Errorw("storage.UpdateBalanceByOrder", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -63,10 +77,10 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			st.logger.Infow("storage.UpdateBalanceByOrder", "status", "not found")
+			logger.Infow("storage.UpdateBalanceByOrder", "status", "not found")
 			return domain.ErrNotFound
 		}
-		st.logger.Errorw("storage.UpdateBalanceByOrder", "err", err.Error())
+		logger.Errorw("storage.UpdateBalanceByOrder", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -80,15 +94,15 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			st.logger.Infow("storage.UpdateBalanceByOrder", "status", "not found")
+			logger.Infow("storage.UpdateBalanceByOrder", "status", "not found")
 			return domain.ErrBalanceChanged
 		}
-		st.logger.Errorw("storage.UpdateBalanceByOrder", "err", err.Error())
+		logger.Errorw("storage.UpdateBalanceByOrder", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		st.logger.Infow("storage.UpdateBalanceByOrder", "err", err.Error())
+		logger.Infow("storage.UpdateBalanceByOrder", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -96,20 +110,27 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 }
 
 func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.UserBalance, withdraw *domain.WithdrawalData) error {
+
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.UpdateBalanceByWithdraw error: can't extract logger")
+		return err
+	}
+
 	if balance == nil {
-		st.logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "balance is nil")
+		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "balance is nil")
 		return fmt.Errorf("%w: balance is nil", domain.ErrServerInternal)
 	}
 
 	if withdraw == nil {
-		st.logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "withdraw is nil")
+		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "withdraw is nil")
 		return fmt.Errorf("%w: withdraw is nil", domain.ErrServerInternal)
 	}
 
 	tx, err := st.pPool.Begin(ctx)
 
 	if err != nil {
-		st.logger.Errorw("storage.UpdateBatch", "err", err.Error())
+		logger.Errorw("storage.UpdateBatch", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -133,15 +154,15 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			st.logger.Infow("storage.UpdateBalanceByWithdraw", "status", "not found")
+			logger.Infow("storage.UpdateBalanceByWithdraw", "status", "not found")
 			return domain.ErrBalanceChanged
 		}
-		st.logger.Errorw("storage.UpdateBalanceByWithdraw", "err", err.Error())
+		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		st.logger.Infow("storage.UpdateBalanceByWithdraw", "err", err.Error())
+		logger.Infow("storage.UpdateBalanceByWithdraw", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -151,6 +172,12 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.WithdrawalData, error) {
 	var withdrawals []domain.WithdrawalData
 
+	logger, err := domain.GetCtxLogger(ctx)
+	if err != nil {
+		fmt.Printf("storage.UpdateBalanceByWithdraw error: can't extract logger")
+		return nil, err
+	}
+
 	rows, err := st.pPool.Query(ctx,
 		`select w.number, w.sum, w.processed_at from withdrawal w 
 		inner join balance b on b.balanceId = w.balanceId where b.userId=1`,
@@ -158,7 +185,7 @@ func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.Withdr
 	)
 
 	if err != nil {
-		st.logger.Infow("storage.Withdrawals", "err", err.Error())
+		logger.Infow("storage.Withdrawals", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 
@@ -169,7 +196,7 @@ func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.Withdr
 		var processed_at time.Time
 		err = rows.Scan(&withdrawal.Order, &withdrawal.Sum, &processed_at)
 		if err != nil {
-			st.logger.Infow("storage.Withdrawals", "err", err.Error())
+			logger.Infow("storage.Withdrawals", "err", err.Error())
 			return nil, domain.ErrServerInternal
 		}
 		withdrawal.ProcessedAt = domain.RFC3339Time(processed_at)
@@ -179,10 +206,10 @@ func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.Withdr
 	err = rows.Err()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			st.logger.Infow("storage.Withdrawals", "status", "not found")
+			logger.Infow("storage.Withdrawals", "status", "not found")
 			return nil, domain.ErrNotFound
 		}
-		st.logger.Infow("storage.Withdrawals", "err", err.Error())
+		logger.Infow("storage.Withdrawals", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 

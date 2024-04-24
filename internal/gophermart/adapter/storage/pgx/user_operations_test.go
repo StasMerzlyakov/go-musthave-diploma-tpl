@@ -7,6 +7,7 @@ import (
 	"github.com/StasMerzlyakov/gophermart/internal/config"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/storage/pgx"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +22,8 @@ func TestAuthFunctions(t *testing.T) {
 	require.NoError(t, err)
 
 	logger := createLogger()
-	storage := pgx.NewStorage(ctx, logger, &config.GophermartConfig{
+	domain.SetMainLogger(logger)
+	storage := pgx.NewStorage(ctx, &config.GophermartConfig{
 		MaxConns:    5,
 		DatabaseUri: connString,
 	})
@@ -37,10 +39,14 @@ func TestAuthFunctions(t *testing.T) {
 	err = clear(ctx)
 	require.NoError(t, err)
 
+	// Все бизнес-операции выполняются с ctx, содержащим logger
+	requestUUID := uuid.New()
+	loggedCtx := domain.EnrichWithRequestIDLogger(ctx, requestUUID, logger)
+
 	login := "login"
 	passHash := "hash"
 	salt := "salt"
-	ldata, err := storage.GetUserData(ctx, login)
+	ldata, err := storage.GetUserData(loggedCtx, login)
 	require.NoError(t, err)
 	require.Nil(t, ldata)
 
@@ -50,13 +56,13 @@ func TestAuthFunctions(t *testing.T) {
 		Salt:  salt,
 	}
 
-	_, err = storage.RegisterUser(ctx, ldata)
+	_, err = storage.RegisterUser(loggedCtx, ldata)
 	require.NoError(t, err)
 
-	_, err = storage.RegisterUser(ctx, ldata)
+	_, err = storage.RegisterUser(loggedCtx, ldata)
 	require.ErrorIs(t, err, domain.ErrLoginIsBusy)
 
-	ldata, err = storage.GetUserData(ctx, login)
+	ldata, err = storage.GetUserData(loggedCtx, login)
 	require.NoError(t, err)
 	require.NotNil(t, ldata)
 

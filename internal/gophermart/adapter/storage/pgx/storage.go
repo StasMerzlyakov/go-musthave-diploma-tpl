@@ -13,9 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/tracelog"
 )
 
-func NewStorage(appCnf context.Context, logger domain.Logger, gConf *config.GophermartConfig) *storage {
+func NewStorage(appCnf context.Context, gConf *config.GophermartConfig) *storage {
 	once.Do(func() {
-		st = initializePGXConf(appCnf, logger, gConf)
+		st = initializePGXConf(appCnf, gConf)
 	})
 
 	return st
@@ -24,7 +24,10 @@ func NewStorage(appCnf context.Context, logger domain.Logger, gConf *config.Goph
 var once sync.Once
 var st *storage
 
-func initializePGXConf(ctx context.Context, logger domain.Logger, gConf *config.GophermartConfig) *storage {
+func initializePGXConf(ctx context.Context, gConf *config.GophermartConfig) *storage {
+
+	logger := domain.GetMainLogger()
+
 	logger.Infow("initializePGXConf", "status", "start")
 
 	pConf, err := pgxpool.ParseConfig(gConf.DatabaseUri)
@@ -56,26 +59,24 @@ func initializePGXConf(ctx context.Context, logger domain.Logger, gConf *config.
 
 	st = &storage{
 		pPool:                pPool,
-		logger:               logger,
 		processingLimit:      gConf.ProcessingLimit,
 		processingScoreDelta: gConf.ProcessingScoreDelta,
 	}
 
-	st.init(ctx)
+	st.init(ctx, logger)
 
-	st.logger.Infow("initializePGXConf", "status", "complete")
+	logger.Infow("initializePGXConf", "status", "complete")
 	return st
 }
 
 type storage struct {
 	pPool                *pgxpool.Pool
-	logger               domain.Logger
 	processingLimit      int
 	processingScoreDelta time.Duration
 }
 
-func (st *storage) init(ctx context.Context) error {
-	st.logger.Infow("init", "status", "start")
+func (st *storage) init(ctx context.Context, logger domain.Logger) error {
+	logger.Infow("init", "status", "start")
 
 	tx, err := st.pPool.Begin(ctx)
 	if err != nil {
