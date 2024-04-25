@@ -13,9 +13,9 @@ import (
 
 type ContextKey string
 
-const KeyRequestID = ContextKey("RequestID")
-const KeyLogger = ContextKey("Logger")
-const KeyAuthData = ContextKey("AuthData")
+const keyRequestID = ContextKey("RequestID")
+const keyLogger = ContextKey("Logger")
+const keyAuthData = ContextKey("AuthData")
 
 const LoggerKeyRequestID = "requestID"
 const LoggerKeyUserID = "userID"
@@ -32,7 +32,7 @@ func EnrichWithRequestIDLogger(ctx context.Context, requestID uuid.UUID, logger 
 		internalLogger: logger,
 		requestID:      requestID.String(),
 	}
-	resultCtx := context.WithValue(ctx, KeyLogger, requestIDLogger)
+	resultCtx := context.WithValue(ctx, keyLogger, requestIDLogger)
 	return resultCtx
 }
 
@@ -47,8 +47,8 @@ func EnrichWithAuthData(ctx context.Context, authData *AuthData) (context.Contex
 		return ctx, fmt.Errorf("can't get logger %w", err)
 	}
 
-	resultCtx := context.WithValue(ctx, KeyAuthData, authData)
-	resultCtx = context.WithValue(resultCtx, KeyLogger, &userIDLogger{
+	resultCtx := context.WithValue(ctx, keyAuthData, authData)
+	resultCtx = context.WithValue(resultCtx, keyLogger, &userIDLogger{
 		internalLogger: curLogger,
 		userID:         strconv.Itoa(authData.UserID),
 	})
@@ -56,7 +56,7 @@ func EnrichWithAuthData(ctx context.Context, authData *AuthData) (context.Contex
 }
 
 func GetRequestID(ctx context.Context) (uuid.UUID, error) {
-	if v := ctx.Value(KeyRequestID); v != nil {
+	if v := ctx.Value(keyRequestID); v != nil {
 		requestID, ok := v.(uuid.UUID)
 		if !ok {
 			return uuid.Nil, fmt.Errorf("%w: unexpected requestID type", ErrServerInternal)
@@ -67,7 +67,7 @@ func GetRequestID(ctx context.Context) (uuid.UUID, error) {
 }
 
 func GetAuthData(ctx context.Context) (*AuthData, error) {
-	if v := ctx.Value(KeyAuthData); v != nil {
+	if v := ctx.Value(keyAuthData); v != nil {
 		authData, ok := v.(*AuthData)
 		if !ok {
 			return nil, fmt.Errorf("%w: unexpected authData type", ErrUserIsNotAuthorized)
@@ -86,7 +86,7 @@ func GetUserID(ctx context.Context) (int, error) {
 }
 
 func GetCtxLogger(ctx context.Context) (Logger, error) {
-	if v := ctx.Value(KeyLogger); v != nil {
+	if v := ctx.Value(keyLogger); v != nil {
 		lg, ok := v.(Logger)
 		if !ok {
 			return nil, fmt.Errorf("%w: unexpected logger type", ErrServerInternal)

@@ -26,7 +26,7 @@ func NewJwtRequestMW(app AuthApp) middleware.Middleware {
 				return
 			}
 
-			reqToken := req.Header.Get("Authorization")
+			reqToken := req.Header.Get(domain.AuthorizationHeader)
 			if reqToken == "" {
 				errMsg := "Authorization header is not set"
 				log.Infow("JwtRequestMW", "err", errMsg)
