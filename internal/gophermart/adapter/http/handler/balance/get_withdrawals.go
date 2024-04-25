@@ -1,4 +1,4 @@
-package order
+package balance
 
 import (
 	"context"
@@ -10,16 +10,16 @@ import (
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
 )
 
-//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . GetOrderApp
-type GetOrderApp interface {
-	All(ctx context.Context) ([]domain.OrderData, error)
+//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . GetWithdrawalsApp
+type GetWithdrawalsApp interface {
+	Withdrawals(ctx context.Context) ([]domain.WithdrawalData, error)
 }
 
-// GET /api/user/orders
-func GetHandler(app GetOrderApp) http.HandlerFunc {
+// GET /api/user/withdrawals
+func GetWithdrawals(app GetWithdrawalsApp) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		handlerName := "GetHandler"
+		handlerName := "balance.GetWithdrawals"
 
 		logger, err := domain.GetCtxLogger(req.Context())
 		if err != nil {
@@ -37,7 +37,7 @@ func GetHandler(app GetOrderApp) http.HandlerFunc {
 			return
 		}
 
-		orderData, err := app.All(req.Context())
+		data, err := app.Withdrawals(req.Context())
 		if err != nil {
 			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
 			return
@@ -45,7 +45,7 @@ func GetHandler(app GetOrderApp) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", domain.ApplicationJSON)
 
-		if err := json.NewEncoder(w).Encode(orderData); err != nil {
+		if err := json.NewEncoder(w).Encode(data); err != nil {
 			logger.Infow(handlerName, "err", fmt.Sprintf("json encode error: %v", err.Error()))
 			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
 			return

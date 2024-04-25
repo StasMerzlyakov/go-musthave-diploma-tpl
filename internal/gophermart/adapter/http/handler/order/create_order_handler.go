@@ -19,7 +19,7 @@ type CreateOrderApp interface {
 func CreateHandler(app CreateOrderApp) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		handlerName := "CreateHandler"
+		handlerName := "order.CreateHandler"
 
 		logger, err := domain.GetCtxLogger(req.Context())
 		if err != nil {

@@ -1,4 +1,4 @@
-package auth
+package balance
 
 import (
 	"context"
@@ -9,16 +9,16 @@ import (
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
 )
 
-//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . LogingApp
-type LogingApp interface {
-	Login(ctx context.Context, userData *domain.AuthentificationData) (domain.TokenString, error)
+//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . WithdrawApp
+type WithdrawApp interface {
+	Withdraw(ctx context.Context, withdraw *domain.WithdrawData) error
 }
 
-// POST /api/user/login
-func LoginHandler(app LogingApp) http.HandlerFunc {
+// POST /api/user/balance/withdraw
+func WithdrawHandler(app WithdrawApp) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
-		handlerName := "LoginHandler"
+		handlerName := "balance.WithdrawHandler"
 
 		logger, err := domain.GetCtxLogger(req.Context())
 		if err != nil {
@@ -34,20 +34,16 @@ func LoginHandler(app LogingApp) http.HandlerFunc {
 			return
 		}
 
-		var login *domain.AuthentificationData
+		var data *domain.WithdrawData
 
-		if err := json.NewDecoder(req.Body).Decode(&login); err != nil {
+		if err := json.NewDecoder(req.Body).Decode(&data); err != nil {
 			logger.Infow(handlerName, "err", fmt.Sprintf("json decode error - %v", err.Error()))
 			http.Error(w, "json decode error", http.StatusBadRequest)
 			return
 		}
 
-		tokenString, err := app.Login(req.Context(), login)
-		if err != nil {
-			http.Error(w, "registration error", domain.MapDomainErrorToHttpStatusErr(err))
-			return
+		if err = app.Withdraw(req.Context(), data); err != nil {
+			http.Error(w, "withraw error", domain.MapDomainErrorToHttpStatusErr(err))
 		}
-
-		w.Header().Set(domain.AuthorizationHeader, fmt.Sprintf("Bearer %v", tokenString))
 	}
 }
