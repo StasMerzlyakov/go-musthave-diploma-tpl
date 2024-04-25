@@ -59,8 +59,10 @@ func TestRegisterNoErr(t *testing.T) {
 		require.Equal(t, hexB64, loginData.Hash)
 	}).Times(1)
 
-	err := auth.Register(ctx, regData)
+	tokenString, err := auth.Register(ctx, regData)
 	require.NoError(t, err)
+	require.NotEmpty(t, tokenString)
+
 }
 
 func TestRegisterErrLoginIsBusy(t *testing.T) {
@@ -87,9 +89,10 @@ func TestRegisterErrLoginIsBusy(t *testing.T) {
 		return -1, fmt.Errorf("err %w", domain.ErrLoginIsBusy)
 	}).Times(1)
 
-	err := auth.Register(ctx, regData)
+	tokenString, err := auth.Register(ctx, regData)
 	require.Error(t, err)
 	require.ErrorIs(t, err, domain.ErrLoginIsBusy)
+	require.Empty(t, tokenString)
 }
 
 func TestRegisterErrServerInternal(t *testing.T) {
@@ -116,9 +119,10 @@ func TestRegisterErrServerInternal(t *testing.T) {
 		return -1, errors.New("custom error")
 	}).Times(1)
 
-	err := auth.Register(ctx, regData)
+	tokenString, err := auth.Register(ctx, regData)
 	require.Error(t, err)
 	require.ErrorIs(t, err, domain.ErrServerInternal)
+	require.Empty(t, tokenString)
 }
 
 func TestAuthentificateNoErr(t *testing.T) {

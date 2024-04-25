@@ -60,37 +60,37 @@ const minPassEntropyBits = 60
 //   - domain.ErrDataFormat
 //   - domain.ErrServerInternal
 //   - domain.ErrLoginIsBusy
-func (a *auth) Register(ctx context.Context, regData *domain.RegistrationData) error {
+func (a *auth) Register(ctx context.Context, regData *domain.RegistrationData) (domain.TokenString, error) {
 
 	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		log.Printf("%v: can't register - logger not found in context", domain.ErrServerInternal)
-		return fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
+		return "", fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
 	}
 
 	if regData == nil {
 		logger.Errorw("auth.Register", "err", "data is null")
-		return fmt.Errorf("null register data: %w", domain.ErrServerInternal)
+		return "", fmt.Errorf("null register data: %w", domain.ErrServerInternal)
 	}
 
 	login := regData.Login
 	if !LoginRegexp.MatchString(login) {
 		logger.Errorw("auth.Register", "err", "login is bad", "login", regData.Login)
-		return fmt.Errorf("%w: login is bad", domain.ErrDataFormat)
+		return "", fmt.Errorf("%w: login is bad", domain.ErrDataFormat)
 	}
 
 	pass := regData.Password
 	err = passwordValidator.Validate(pass, minPassEntropyBits)
 	if err != nil {
 		logger.Errorw("auth.Register", "err", "password is too simple", "login", regData.Login)
-		return fmt.Errorf("%w: login is bad", domain.ErrDataFormat)
+		return "", fmt.Errorf("%w: login is bad", domain.ErrDataFormat)
 	}
 
 	salt := make([]byte, 16)
 	_, err = a.saltFn(salt)
 	if err != nil {
 		logger.Errorw("auth.Register", "err", fmt.Sprintf("server error %v", err.Error()), "login", regData.Login)
-		return fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
+		return "", fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
 	}
 
 	saltB64 := base64.URLEncoding.EncodeToString(salt)
@@ -101,7 +101,7 @@ func (a *auth) Register(ctx context.Context, regData *domain.RegistrationData) e
 	hex := h.Sum(nil)
 	hexB64 := base64.URLEncoding.EncodeToString(hex)
 
-	_, err = a.authStorage.RegisterUser(ctx, &domain.LoginData{
+	userID, err := a.authStorage.RegisterUser(ctx, &domain.LoginData{
 		Login: login,
 		Hash:  hexB64,
 		Salt:  saltB64,
@@ -110,14 +110,28 @@ func (a *auth) Register(ctx context.Context, regData *domain.RegistrationData) e
 	if err != nil {
 		if errors.Is(err, domain.ErrLoginIsBusy) {
 			logger.Errorw("auth.Register", "err", err.Error(), "login", regData.Login)
-			return fmt.Errorf("%w: can't register user", err)
+			return "", fmt.Errorf("%w: can't register user", err)
 		}
 		logger.Errorw("auth.Register", "err", err.Error(), "login", regData.Login)
-		return fmt.Errorf("%w: can't register user: %v", domain.ErrServerInternal, err.Error())
+		return "", fmt.Errorf("%w: can't register user: %v", domain.ErrServerInternal, err.Error())
 	}
 
-	logger.Infow("Register", "status", "ok", "login", regData.Login)
-	return nil
+	logger.Infow("auth.Register", "status", "ok", "login", regData.Login)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, domain.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.tokenExp)),
+		},
+		UserID: userID,
+	})
+
+	tokenString, err := token.SignedString([]byte(a.tokenSecret))
+	if err != nil {
+		logger.Errorw("auth.Registration", "err", err.Error())
+		return "", fmt.Errorf("%w: can't sign token %v", domain.ErrServerInternal, err.Error())
+	}
+
+	return domain.TokenString(tokenString), nil
 }
 
 // Аутентификация пользователя
