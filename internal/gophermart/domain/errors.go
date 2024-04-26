@@ -26,7 +26,7 @@ func MapDomainErrorToHttpStatusErr(err error) int {
 	}
 
 	if errors.Is(err, ErrWrongOrderNumber) {
-		return http.StatusBadRequest
+		return http.StatusUnprocessableEntity
 	}
 
 	if errors.Is(err, ErrLoginIsBusy) {

@@ -215,7 +215,7 @@ func (b *balance) balanceUpdater(ctx context.Context, orderDataChan <-chan *doma
 
 			orderData.Status = domain.OrderStratusProcessed
 			if err = b.balanceStorage.UpdateBalanceByOrder(ctx, newBalance, orderData); err != nil {
-				logger.Infow("balance.orderDataUpdater", "err", err.Error())
+				logger.Errorw("balance.orderDataUpdater", "err", err.Error())
 				sleepAfterErrChan = time.After(5 * time.Second)
 				orderDataChanInternal = nil
 				continue
@@ -235,7 +235,7 @@ Loop:
 	for {
 		orders, err := b.balanceStorage.GetByStatus(ctx, domain.OrderStratusProcessing)
 		if err != nil {
-			logger.Infow("balance.PoolOrders", "err", err.Error())
+			logger.Errorw("balance.PoolOrders", "err", err.Error())
 			sleepChan = time.After(5 * time.Second)
 			orderDataChanInternal = nil
 			clear(orders) // для защиты от мусора

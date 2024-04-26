@@ -30,7 +30,7 @@ func RegisterHandler(app RegisterApp) http.HandlerFunc {
 
 		contentType := req.Header.Get("Content-Type")
 		if contentType != domain.ApplicationJSON {
-			logger.Infow(handlerName, "err", "unexpected content type")
+			logger.Errorw(handlerName, "err", "unexpected content type")
 			http.Error(w, "unexpected content type", http.StatusBadRequest)
 			return
 		}
@@ -38,7 +38,7 @@ func RegisterHandler(app RegisterApp) http.HandlerFunc {
 		var registration *domain.RegistrationData
 
 		if err := json.NewDecoder(req.Body).Decode(&registration); err != nil {
-			logger.Infow(handlerName, "err", fmt.Sprintf("json decode error - %v", err.Error()))
+			logger.Errorw(handlerName, "err", fmt.Sprintf("json decode error - %v", err.Error()))
 			http.Error(w, "json decode error", http.StatusBadRequest)
 			return
 		}

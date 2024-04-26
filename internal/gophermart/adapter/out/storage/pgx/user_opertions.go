@@ -37,7 +37,7 @@ func (st *storage) RegisterUser(ctx context.Context, ld *domain.LoginData) (int,
 				return -1, domain.ErrLoginIsBusy
 			}
 		}
-		logger.Infow("storage.RegisterUser", "err", err.Error())
+		logger.Errorw("storage.RegisterUser", "err", err.Error())
 		return -1, domain.ErrServerInternal
 	}
 }

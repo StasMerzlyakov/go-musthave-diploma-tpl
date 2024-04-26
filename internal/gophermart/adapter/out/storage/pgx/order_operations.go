@@ -34,7 +34,7 @@ func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 			var userId int
 			err = st.pPool.QueryRow(ctx, `select userId from orderData where number = $1`, data.Number).Scan(&userId)
 			if err != nil {
-				logger.Infow("storage.Upload", "err", err.Error())
+				logger.Errorw("storage.Upload", "err", err.Error())
 				return domain.ErrServerInternal
 			}
 			if userId == data.UserID {
@@ -43,7 +43,7 @@ func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 				return domain.ErrDublicateOrderNumber
 			}
 		} else {
-			logger.Infow("storage.Upload", "err", err.Error())
+			logger.Errorw("storage.Upload", "err", err.Error())
 			return domain.ErrServerInternal
 		}
 	}
@@ -66,7 +66,7 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 	)
 
 	if err != nil {
-		logger.Infow("storage.Orders", "err", err.Error())
+		logger.Errorw("storage.Orders", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 
@@ -77,7 +77,7 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 		var uploaded time.Time
 		err = rows.Scan(&data.Number, &data.UserID, &data.Status, &data.Accrual, &uploaded)
 		if err != nil {
-			logger.Infow("storage.Orders", "err", err.Error())
+			logger.Errorw("storage.Orders", "err", err.Error())
 			return nil, domain.ErrServerInternal
 		}
 		data.UploadedAt = domain.RFC3339Time(uploaded)
@@ -90,7 +90,7 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 			logger.Infow("storage.Orders", "status", "not found")
 			return nil, domain.ErrNotFound
 		}
-		logger.Infow("storage.Orders", "err", err.Error())
+		logger.Errorw("storage.Orders", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 
@@ -98,10 +98,6 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 }
 
 func (st *storage) UpdateOrder(ctx context.Context, number domain.OrderNumber, status domain.OrderStatus, accrual *float64) error {
-	rows, err := st.pPool.Query(ctx,
-		`update orderData set status = $1, accrual = $2 where number = $3`,
-		string(status), accrual, string(number),
-	)
 
 	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
@@ -109,8 +105,13 @@ func (st *storage) UpdateOrder(ctx context.Context, number domain.OrderNumber, s
 		return err
 	}
 
+	rows, err := st.pPool.Query(ctx,
+		`update orderData set status = $1, accrual = $2 where number = $3`,
+		string(status), accrual, string(number),
+	)
+
 	if err != nil {
-		logger.Infow("storage.UpdateOrder", "err", err.Error())
+		logger.Errorw("storage.UpdateOrder", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -216,12 +217,12 @@ func (st *storage) UpdateBatch(ctx context.Context, orders []domain.OrderData) e
 	err = tx.SendBatch(context.Background(), batch).Close()
 
 	if err != nil {
-		logger.Infow("storage.UpdateBatch", "err", err.Error())
+		logger.Errorw("storage.UpdateBatch", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		logger.Infow("storage.UpdateBatch", "err", err.Error())
+		logger.Errorw("storage.UpdateBatch", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 

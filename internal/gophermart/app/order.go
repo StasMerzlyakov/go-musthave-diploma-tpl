@@ -148,11 +148,13 @@ func (ord *order) refreshOrderStatus(ctx context.Context,
 			acrData, err := ord.acrualSystem.GetStatus(ctx, *orderNum)
 			if err != nil {
 				// Произошла ошибка - запускаем sleepChan канал в надежде на восстановление
-				logger.Infow("order.refreshOrder", "num", orderNum, "err", err.Error())
+				logger.Errorw("order.refreshOrder", "num", orderNum, "err", err.Error())
 				sleepChan = time.After(5 * time.Second)
 				ordNumInternalChan = nil
 			} else {
-				acrualDataChan <- acrData
+				if acrData != nil {
+					acrualDataChan <- acrData
+				}
 			}
 		}
 	}
@@ -183,7 +185,7 @@ func (ord *order) orderStatusUpdater(ctx context.Context, acrualDataChan <-chan 
 				err := ord.storage.UpdateBatch(ctx, orders)
 				if err != nil {
 					// Произошла ошибка - запускаем sleepChan канал в надежде на восстановление
-					logger.Infow("order.UpdateBatch", "err", err.Error())
+					logger.Errorw("order.UpdateBatch", "err", err.Error())
 					sleepAfterErrChan = time.After(5 * time.Second)
 					acrualDataInternalChan = nil
 				}
@@ -213,7 +215,7 @@ func (ord *order) orderStatusUpdater(ctx context.Context, acrualDataChan <-chan 
 				err := ord.storage.UpdateBatch(ctx, orders)
 				if err != nil {
 					// Произошла ошибка - запускаем sleepChan канал в надежде на восстановление
-					logger.Infow("order.UpdateBatch", "err", err.Error())
+					logger.Errorw("order.UpdateBatch", "err", err.Error())
 					sleepAfterErrChan = time.After(5 * time.Second)
 					acrualDataInternalChan = nil
 				}
@@ -235,7 +237,7 @@ Loop:
 	for {
 		orders, err := ord.storage.GetByStatus(ctx, domain.OrderStratusNew)
 		if err != nil {
-			logger.Infow("order.poolOrders", "err", err.Error())
+			logger.Errorw("order.poolOrders", "err", err.Error())
 			sleepChan = time.After(5 * time.Second)
 			ordNumChanInternal = nil
 			clear(orders) // для защиты от мусора

@@ -41,7 +41,7 @@ func NewRetriableRequestMWConf(firstRetryDelay time.Duration, delayIncrement tim
 			body, err := io.ReadAll(req.Body)
 			if err != nil {
 				errMsg := "can't read request content"
-				log.Infow("RetriableRequestMW", "err", errMsg)
+				log.Errorw("RetriableRequestMW", "err", errMsg)
 				http.Error(w, errMsg, http.StatusBadRequest)
 				return
 			}
@@ -64,7 +64,7 @@ func NewRetriableRequestMWConf(firstRetryDelay time.Duration, delayIncrement tim
 
 			err = invoker.Invoke(req.Context(), invokableFn)
 			if err != nil {
-				log.Infow("RetriableRequestMW", "err", err.Error())
+				log.Errorw("RetriableRequestMW", "err", err.Error())
 				http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
 				return
 			}
@@ -82,7 +82,7 @@ func NewRetriableRequestMWConf(firstRetryDelay time.Duration, delayIncrement tim
 
 			_, err = w.Write(respWriter.buf.Bytes())
 			if err != nil {
-				log.Infow("RetriableRequestMW", "err", err.Error())
+				log.Errorw("RetriableRequestMW", "err", err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}

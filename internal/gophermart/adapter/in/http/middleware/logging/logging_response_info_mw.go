@@ -35,10 +35,10 @@ func (lw *loggingResponseWriter) Write(data []byte) (int, error) {
 }
 
 func (lw *loggingResponseWriter) WriteHeader(statusCode int) {
-	lw.ResponseWriter.WriteHeader(statusCode)
 	if !lw.statusCodeFixed {
 		lw.responseData.status = statusCode
 		lw.statusCodeFixed = true
+		lw.ResponseWriter.WriteHeader(statusCode)
 	}
 }
 

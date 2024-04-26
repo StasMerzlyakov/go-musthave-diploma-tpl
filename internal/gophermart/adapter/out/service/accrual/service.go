@@ -52,18 +52,15 @@ func (ac *acService) GetStatus(ctx context.Context, orderNum domain.OrderNumber)
 	}
 
 	if resp.StatusCode() == http.StatusNoContent {
-		logger.Infow("acrual.GetStatus", "err", fmt.Sprintf("order %v not found", orderNum))
-		return &domain.AccrualData{
-			Number: orderNum,
-			Status: domain.AccrualStatusInvalid,
-		}, nil
+		logger.Infow("acrual.GetStatus", "msg", fmt.Sprintf("order %v not found", orderNum))
+		return nil, nil
 	}
 
 	if resp.StatusCode() == http.StatusTooManyRequests {
-		logger.Infow("acrual.GetStatus", "err", "too many requests")
+		logger.Errorw("acrual.GetStatus", "err", "too many requests")
 		return nil, fmt.Errorf("%w: too many requests", domain.ErrServerInternal)
 	}
 
-	logger.Infow("acrual.GetStatus", "err", fmt.Sprintf("unexpected status code %v", resp.StatusCode()))
+	logger.Errorw("acrual.GetStatus", "err", fmt.Sprintf("unexpected status code %v", resp.StatusCode()))
 	return nil, fmt.Errorf("%w: unexpected status code %v", domain.ErrServerInternal, resp.StatusCode())
 }

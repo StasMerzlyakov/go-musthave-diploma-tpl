@@ -29,7 +29,7 @@ func WithdrawHandler(app WithdrawApp) http.HandlerFunc {
 
 		contentType := req.Header.Get("Content-Type")
 		if contentType != domain.ApplicationJSON {
-			logger.Infow(handlerName, "err", "unexpected content type")
+			logger.Errorw(handlerName, "err", "unexpected content type")
 			http.Error(w, "unexpected content type", http.StatusBadRequest)
 			return
 		}
@@ -37,7 +37,7 @@ func WithdrawHandler(app WithdrawApp) http.HandlerFunc {
 		var data *domain.WithdrawData
 
 		if err := json.NewDecoder(req.Body).Decode(&data); err != nil {
-			logger.Infow(handlerName, "err", fmt.Sprintf("json decode error - %v", err.Error()))
+			logger.Errorw(handlerName, "err", fmt.Sprintf("json decode error - %v", err.Error()))
 			http.Error(w, "json decode error", http.StatusBadRequest)
 			return
 		}

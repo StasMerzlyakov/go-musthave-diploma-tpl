@@ -28,18 +28,11 @@ func CreateHandler(app CreateOrderApp) http.HandlerFunc {
 			return
 		}
 
-		contentType := req.Header.Get("Content-Type")
-		if contentType != "" && contentType != domain.TextPlain {
-			logger.Infow(handlerName, "err", "unexpected content type")
-			http.Error(w, "unexpected content type", http.StatusBadRequest)
-			return
-		}
-
 		number, err := io.ReadAll(req.Body)
 		defer req.Body.Close()
 
 		if err != nil {
-			logger.Infow(handlerName, "err", "can't read body")
+			logger.Errorw(handlerName, "err", "can't read body")
 			http.Error(w, "can't read body", http.StatusBadRequest)
 			return
 		}

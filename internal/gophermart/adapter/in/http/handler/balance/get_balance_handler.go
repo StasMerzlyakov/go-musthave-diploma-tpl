@@ -32,7 +32,7 @@ func GetHandler(app GetBalanceApp) http.HandlerFunc {
 		defer req.Body.Close()
 
 		if err != nil {
-			logger.Infow(handlerName, "err", "can't read body")
+			logger.Errorw(handlerName, "err", "can't read body")
 			http.Error(w, "can't read body", http.StatusBadRequest)
 			return
 		}

@@ -30,10 +30,16 @@ func main() {
 
 	// -------- Контекст сервера ---------
 	srvCtx, cancelFn := context.WithCancel(context.Background())
+
 	defer cancelFn()
 
 	// -------- Конфигурация ----------
 	srvConf, err := config.LoadGophermartConfig()
+
+	//srvConf.AccrualSystemAddress = "http://localhost:8080"
+	//srvConf.DatabaseUri = "postgres://postgres:postgres@localhost:5432/gophermarket"
+	//srvConf.RunAddress = ":8081"
+
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +81,7 @@ func main() {
 	// мидлы
 	mwList := []func(http.Handler) http.Handler{
 		logging.EncrichWithRequestIDMW(),
-		logging.NewLoggingResponseMW(),
+		logging.NewLoggingRequestMW(),
 		logging.NewLoggingResponseMW(),
 		retry.NewRetriableRequestMW(),
 	}

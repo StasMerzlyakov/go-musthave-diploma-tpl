@@ -48,7 +48,7 @@ func initializePGXConf(ctx context.Context, gConf *config.GophermartConfig) *sto
 		Logger: &loggerAdapter{
 			logger: logger,
 		},
-		LogLevel: tracelog.LogLevelTrace,
+		LogLevel: tracelog.LogLevelError,
 	}
 
 	pPool, err := pgxpool.NewWithConfig(ctx, pConf)

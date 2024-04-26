@@ -102,7 +102,7 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		logger.Infow("storage.UpdateBalanceByOrder", "err", err.Error())
+		logger.Errorw("storage.UpdateBalanceByOrder", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -161,7 +161,7 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		logger.Infow("storage.UpdateBalanceByWithdraw", "err", err.Error())
+		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", err.Error())
 		return domain.ErrServerInternal
 	}
 
@@ -179,7 +179,7 @@ func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.Withdr
 
 	rows, err := st.pPool.Query(ctx,
 		`select w.number, w.sum, w.processed_at from withdrawal w 
-		inner join balance b on b.balanceId = w.balanceId where b.userId=1`,
+		inner join balance b on b.balanceId = w.balanceId where b.userId=$1`,
 		userID,
 	)
 
@@ -208,7 +208,7 @@ func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.Withdr
 			logger.Infow("storage.Withdrawals", "status", "not found")
 			return nil, domain.ErrNotFound
 		}
-		logger.Infow("storage.Withdrawals", "err", err.Error())
+		logger.Errorw("storage.Withdrawals", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
 

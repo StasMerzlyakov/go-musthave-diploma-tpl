@@ -32,7 +32,7 @@ func GetWithdrawals(app GetWithdrawalsApp) http.HandlerFunc {
 		defer req.Body.Close()
 
 		if err != nil {
-			logger.Infow(handlerName, "err", "can't read body")
+			logger.Errorw(handlerName, "err", "can't read body")
 			http.Error(w, "can't read body", http.StatusBadRequest)
 			return
 		}
@@ -46,7 +46,7 @@ func GetWithdrawals(app GetWithdrawalsApp) http.HandlerFunc {
 		w.Header().Set("Content-Type", domain.ApplicationJSON)
 
 		if err := json.NewEncoder(w).Encode(data); err != nil {
-			logger.Infow(handlerName, "err", fmt.Sprintf("json encode error: %v", err.Error()))
+			logger.Errorw(handlerName, "err", fmt.Sprintf("json encode error: %v", err.Error()))
 			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
 			return
 		}

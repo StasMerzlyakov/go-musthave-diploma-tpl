@@ -34,7 +34,7 @@ func LoadGophermartConfig() (*GophermartConfig, error) {
 	flag.IntVar(&srvConf.BatchSize, "dbBatchSize", 10, "database batch size")
 
 	flag.IntVar(&srvConf.ProcessingLimit, "pLimit", 10, "order processing limit")
-	flag.DurationVar(&srvConf.ProcessingScoreDelta, "pDelta", 20*time.Second, "order processing delta")
+	flag.DurationVar(&srvConf.ProcessingScoreDelta, "pDelta", 5*time.Second, "order processing delta")
 
 	flag.StringVar(&srvConf.RunAddress, "a", ":8080", "server address (format \":PORT\")")
 	flag.StringVar(&srvConf.DatabaseUri, "d", "", "PostgreSQL URL like 'postgres://username:password@localhost:5432/database_name'")

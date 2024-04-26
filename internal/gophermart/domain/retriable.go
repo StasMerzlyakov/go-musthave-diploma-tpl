@@ -60,10 +60,10 @@ func (r *retriableInvoker) Invoke(ctx context.Context, fn InvokableFn) error {
 	}
 
 	for {
-		logger.Infow("Invoke", "iteration", iter, "status", "start")
+		logger.Infow("retry", "iteration", iter, "status", "start")
 		err = fn(ctx)
 		if err == nil {
-			logger.Infow("Invoke", "iteration", iter, "status", "ok")
+			logger.Infow("retry", "iteration", iter, "status", "ok")
 			return nil
 		}
 
@@ -72,13 +72,13 @@ func (r *retriableInvoker) Invoke(ctx context.Context, fn InvokableFn) error {
 		}
 
 		if !errors.Is(err, r.RetriableErr) || iter == r.RetryCount {
-			logger.Infow("Invoke", "iteration", iter, "status", "err", "msg", err.Error())
+			logger.Infow("retry", "iteration", iter, "status", "retry", "msg", err.Error())
 			return err
 		}
 		nextInvokation := r.FirstRetryDelay + time.Duration(iter-1)*r.DelayIncrement
 		select {
 		case <-ctx.Done():
-			logger.Infow("Invoke", "status", "err", "msg", "context cancelled")
+			logger.Infow("retry", "status", "done", "msg", "context cancelled")
 			return ctx.Err()
 		case <-time.After(nextInvokation):
 			iter++
