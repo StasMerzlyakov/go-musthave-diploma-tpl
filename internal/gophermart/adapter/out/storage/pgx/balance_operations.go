@@ -110,7 +110,6 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 }
 
 func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.UserBalance, withdraw *domain.WithdrawalData) error {
-
 	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {
 		fmt.Printf("storage.UpdateBalanceByWithdraw error: can't extract logger")

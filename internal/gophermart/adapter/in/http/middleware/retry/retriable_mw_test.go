@@ -33,7 +33,7 @@ func TestRetriableMW1(t *testing.T) {
 	rMW := retry.NewRetriableRequestMWConf(time.Duration(time.Second), time.Duration(2*time.Second), 4)
 
 	domain.SetMainLogger(mLog)
-	erMW := logging.EncrichWithRequestIDMW
+	erMW := logging.EncrichWithRequestIDMW()
 
 	mux := http.NewServeMux()
 	mux.Handle("/json", middleware.Conveyor(createOkMockHandler(ctrl), rMW, erMW))
@@ -61,7 +61,7 @@ func TestRetriableMW2(t *testing.T) {
 	rMW := retry.NewRetriableRequestMWConf(time.Duration(time.Second), time.Duration(2*time.Second), 4)
 
 	domain.SetMainLogger(mLog)
-	erMW := logging.EncrichWithRequestIDMW
+	erMW := logging.EncrichWithRequestIDMW()
 
 	mux := http.NewServeMux()
 	mux.Handle("/json", middleware.Conveyor(createAnyErrHandler(ctrl), rMW, erMW))
@@ -89,7 +89,7 @@ func TestRetriableMW3(t *testing.T) {
 	rMW := retry.NewRetriableRequestMWConf(time.Duration(time.Second), time.Duration(2*time.Second), 4)
 
 	domain.SetMainLogger(mLog)
-	erMW := logging.EncrichWithRequestIDMW
+	erMW := logging.EncrichWithRequestIDMW()
 
 	mux := http.NewServeMux()
 	mux.Handle("/json", middleware.Conveyor(createAnyErrHandler(ctrl), rMW, erMW))
@@ -117,7 +117,7 @@ func TestRetriableMW4(t *testing.T) {
 	rMW := retry.NewRetriableRequestMWConf(time.Duration(time.Second), time.Duration(2*time.Second), 4)
 
 	domain.SetMainLogger(mLog)
-	erMW := logging.EncrichWithRequestIDMW
+	erMW := logging.EncrichWithRequestIDMW()
 
 	mux := http.NewServeMux()
 	mux.Handle("/json", middleware.Conveyor(createInernalErrExceptLastHandler(ctrl), rMW, erMW))

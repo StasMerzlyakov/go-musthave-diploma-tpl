@@ -6,6 +6,7 @@ toolchain go1.22.2
 
 require (
 	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/go-resty/resty/v2 v2.12.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/mock v1.6.0

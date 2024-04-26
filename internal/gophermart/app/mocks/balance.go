@@ -80,7 +80,7 @@ func (mr *MockBalanceStorageMockRecorder) UpdateBalanceByOrder(arg0, arg1, arg2 
 }
 
 // UpdateBalanceByWithdraw mocks base method.
-func (m *MockBalanceStorage) UpdateBalanceByWithdraw(arg0 context.Context, arg1 *domain.UserBalance, arg2 *domain.WithdrawData) error {
+func (m *MockBalanceStorage) UpdateBalanceByWithdraw(arg0 context.Context, arg1 *domain.UserBalance, arg2 *domain.WithdrawalData) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateBalanceByWithdraw", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

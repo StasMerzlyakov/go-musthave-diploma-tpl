@@ -25,7 +25,7 @@ func TestWithdraw1(t *testing.T) {
 	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
 
 	domain.SetMainLogger(mLog)
-	erMW := logging.EncrichWithRequestIDMW
+	erMW := logging.EncrichWithRequestIDMW()
 
 	app := mocks.NewMockWithdrawApp(ctrl)
 

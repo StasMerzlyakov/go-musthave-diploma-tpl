@@ -96,6 +96,17 @@ func GetCtxLogger(ctx context.Context) (Logger, error) {
 	return nil, fmt.Errorf("%w: can't extract logger", ErrServerInternal)
 }
 
+func EnrichWithMainLogger(ctx context.Context) (context.Context, error) {
+	logger := GetMainLogger()
+	if logger == nil {
+		fmt.Printf("main logger is nil")
+		return ctx, fmt.Errorf("%w: main logger is nil", ErrServerInternal)
+	}
+
+	resultCtx := context.WithValue(ctx, keyLogger, logger)
+	return resultCtx, nil
+}
+
 var _ Logger = (*requestIDLogger)(nil)
 
 type requestIDLogger struct {

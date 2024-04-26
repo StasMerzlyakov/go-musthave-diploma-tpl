@@ -28,13 +28,13 @@ func NewOrder(conf *config.GophermartConfig,
 type OrderStorage interface {
 	Upload(ctx context.Context, data *domain.OrderData) error
 	Orders(ctx context.Context, userID int) ([]domain.OrderData, error)
-	Update(ctx context.Context, number domain.OrderNumber, status domain.OrderStatus, accrual *float64) error
+	UpdateOrder(ctx context.Context, number domain.OrderNumber, status domain.OrderStatus, accrual *float64) error
 	UpdateBatch(ctx context.Context, orders []domain.OrderData) error
 	GetByStatus(ctx context.Context, statuse domain.OrderStatus) ([]domain.OrderData, error)
 }
 
 type AcrualSystem interface {
-	Update(ctx context.Context, orderNum domain.OrderNumber) (*domain.AccrualData, error)
+	GetStatus(ctx context.Context, orderNum domain.OrderNumber) (*domain.AccrualData, error)
 }
 
 type order struct {
@@ -126,9 +126,10 @@ func (ord *order) All(ctx context.Context) ([]domain.OrderData, error) {
 }
 
 func (ord *order) refreshOrderStatus(ctx context.Context,
-	logger domain.Logger,
 	ordNumChan <-chan *domain.OrderNumber,
 	acrualDataChan chan<- *domain.AccrualData) {
+
+	logger := domain.GetMainLogger()
 
 	// Пытаюсь осмыслить https://go.dev/blog/io2013-talk-concurrency
 	var ordNumInternalChan <-chan *domain.OrderNumber = ordNumChan
@@ -144,7 +145,7 @@ func (ord *order) refreshOrderStatus(ctx context.Context,
 			ordNumInternalChan = ordNumChan
 			sleepChan = nil
 		case orderNum := <-ordNumInternalChan:
-			acrData, err := ord.acrualSystem.Update(ctx, *orderNum)
+			acrData, err := ord.acrualSystem.GetStatus(ctx, *orderNum)
 			if err != nil {
 				// Произошла ошибка - запускаем sleepChan канал в надежде на восстановление
 				logger.Infow("order.refreshOrder", "num", orderNum, "err", err.Error())
@@ -157,7 +158,7 @@ func (ord *order) refreshOrderStatus(ctx context.Context,
 	}
 }
 
-func (ord *order) orderStatusUpdater(ctx context.Context, logger domain.Logger, acrualDataChan <-chan *domain.AccrualData) {
+func (ord *order) orderStatusUpdater(ctx context.Context, acrualDataChan <-chan *domain.AccrualData) {
 	// Будем обновлять данные пачками либо по 10 записей либо через каждые 2 секунды
 	var orders []domain.OrderData
 
@@ -165,6 +166,9 @@ func (ord *order) orderStatusUpdater(ctx context.Context, logger domain.Logger, 
 	var waitAcrualsTimeoutChan <-chan time.Time = time.After(2 * time.Second)
 	var sleepAfterErrChan <-chan time.Time
 	var acrualDataInternalChan <-chan *domain.AccrualData = acrualDataChan
+
+	logger := domain.GetMainLogger()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -220,10 +224,12 @@ func (ord *order) orderStatusUpdater(ctx context.Context, logger domain.Logger, 
 }
 
 // Ищет в хранилище запросы на начисление в статусе OrderStratusNew
-func (ord *order) poolOrders(ctx context.Context, logger domain.Logger, ordNumChan chan<- *domain.OrderNumber) {
+func (ord *order) poolOrders(ctx context.Context, ordNumChan chan<- *domain.OrderNumber) {
 	var sleepChan <-chan time.Time
 	var ordNumChanInternal chan<- *domain.OrderNumber = ordNumChan
 	var nexNum *domain.OrderNumber
+
+	logger := domain.GetMainLogger()
 
 Loop:
 	for {
@@ -273,10 +279,10 @@ Loop:
 func (ord *order) PoolAcrualSystem(ctx context.Context) {
 	ord.once.Do(func() {
 		go func() {
-			logger, err := domain.GetCtxLogger(ctx)
+
+			ctx, err := domain.EnrichWithMainLogger(ctx)
 			if err != nil {
-				fmt.Printf("app.orderPool error - logger not found")
-				return
+				panic(err)
 			}
 			var wg sync.WaitGroup
 			defer wg.Wait()
@@ -287,20 +293,20 @@ func (ord *order) PoolAcrualSystem(ctx context.Context) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				ord.poolOrders(ctx, logger, ordNumChan)
+				ord.poolOrders(ctx, ordNumChan)
 			}()
 
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				ord.orderStatusUpdater(ctx, logger, acrualDataChan)
+				ord.orderStatusUpdater(ctx, acrualDataChan)
 			}()
 
 			for i := 0; i < ord.processingWorkerCount; i++ {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					ord.refreshOrderStatus(ctx, logger, ordNumChan, acrualDataChan)
+					ord.refreshOrderStatus(ctx, ordNumChan, acrualDataChan)
 				}()
 			}
 

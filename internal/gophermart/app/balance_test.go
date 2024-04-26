@@ -12,6 +12,7 @@ import (
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/app"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/app/mocks"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
+	lmocks "github.com/StasMerzlyakov/gophermart/internal/gophermart/domain/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -142,7 +143,7 @@ func TestWithdrawNoErr(t *testing.T) {
 	}).Times(1)
 
 	mockStorage.EXPECT().UpdateBalanceByWithdraw(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, newBalance *domain.UserBalance, withdraw *domain.WithdrawData) error {
+		func(ctx context.Context, newBalance *domain.UserBalance, withdraw *domain.WithdrawalData) error {
 
 			require.NotNil(t, newBalance)
 			require.Equal(t, userID, newBalance.UserID)
@@ -445,6 +446,11 @@ func TestPoolOrders(t *testing.T) {
 
 	bl := app.NewBalance(conf, mockStorage)
 
+	mLog := lmocks.NewMockLogger(ctrl)
+	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
+
+	domain.SetMainLogger(mLog)
+
 	bl.PoolOrders(ctx)
 
 	time.Sleep(10 * time.Second)
@@ -526,6 +532,11 @@ func TestPoolOrders2(t *testing.T) {
 	conf := &config.GophermartConfig{}
 
 	bl := app.NewBalance(conf, mockStorage)
+
+	mLog := lmocks.NewMockLogger(ctrl)
+	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
+
+	domain.SetMainLogger(mLog)
 
 	bl.PoolOrders(ctx)
 

@@ -20,7 +20,7 @@ func NewBalance(conf *config.GophermartConfig, balanceStorage BalanceStorage) *b
 //go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . BalanceStorage
 type BalanceStorage interface {
 	Balance(ctx context.Context, userID int) (*domain.UserBalance, error)
-	UpdateBalanceByWithdraw(ctx context.Context, newBalance *domain.UserBalance, withdraw *domain.WithdrawData) error
+	UpdateBalanceByWithdraw(ctx context.Context, newBalance *domain.UserBalance, withdraw *domain.WithdrawalData) error
 	UpdateBalanceByOrder(ctx context.Context, balance *domain.UserBalance, orderData *domain.OrderData) error
 	Withdrawals(ctx context.Context, userID int) ([]domain.WithdrawalData, error)
 	GetByStatus(ctx context.Context, status domain.OrderStatus) ([]domain.OrderData, error)
@@ -127,7 +127,13 @@ func (b *balance) Withdraw(ctx context.Context, withdraw *domain.WithdrawData) e
 		},
 	}
 
-	err = b.balanceStorage.UpdateBalanceByWithdraw(ctx, newBalance, withdraw)
+	withdrawal := domain.WithdrawalData{
+		Order:       withdraw.Order,
+		Sum:         withdraw.Sum,
+		ProcessedAt: domain.RFC3339Time(time.Now()),
+	}
+
+	err = b.balanceStorage.UpdateBalanceByWithdraw(ctx, newBalance, &withdrawal)
 	if err != nil {
 		logger.Errorw("balance.Withdraw", "err", err.Error())
 		return fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
@@ -168,9 +174,11 @@ func (b *balance) Withdrawals(ctx context.Context) ([]domain.WithdrawalData, err
 	return withdrawals, nil
 }
 
-func (b *balance) balanceUpdater(ctx context.Context, logger domain.Logger, orderDataChan <-chan *domain.OrderData) {
+func (b *balance) balanceUpdater(ctx context.Context, orderDataChan <-chan *domain.OrderData) {
 	var sleepAfterErrChan <-chan time.Time
 	var orderDataChanInternal = orderDataChan
+
+	logger := domain.GetMainLogger()
 	for {
 		select {
 		case <-ctx.Done():
@@ -217,10 +225,12 @@ func (b *balance) balanceUpdater(ctx context.Context, logger domain.Logger, orde
 	}
 }
 
-func (b *balance) poolOrders(ctx context.Context, logger domain.Logger, orderDataChan chan<- *domain.OrderData) {
+func (b *balance) poolOrders(ctx context.Context, orderDataChan chan<- *domain.OrderData) {
 	var sleepChan <-chan time.Time
 	var orderDataChanInternal chan<- *domain.OrderData = orderDataChan
 	var nextOrd *domain.OrderData
+
+	logger := domain.GetMainLogger()
 Loop:
 	for {
 		orders, err := b.balanceStorage.GetByStatus(ctx, domain.OrderStratusProcessing)
@@ -267,7 +277,7 @@ Loop:
 func (b *balance) PoolOrders(ctx context.Context) {
 	b.once.Do(func() {
 		go func() {
-			logger, err := domain.GetCtxLogger(ctx)
+			ctx, err := domain.EnrichWithMainLogger(ctx)
 			if err != nil {
 				fmt.Printf("balance.PoolOrders error - logger not found")
 				return
@@ -280,13 +290,13 @@ func (b *balance) PoolOrders(ctx context.Context) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				b.poolOrders(ctx, logger, orderDataChan)
+				b.poolOrders(ctx, orderDataChan)
 			}()
 
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				b.balanceUpdater(ctx, logger, orderDataChan)
+				b.balanceUpdater(ctx, orderDataChan)
 			}()
 		}()
 	})

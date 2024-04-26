@@ -12,6 +12,7 @@ import (
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/app"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/app/mocks"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
+	lmocks "github.com/StasMerzlyakov/gophermart/internal/gophermart/domain/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -383,6 +384,11 @@ func TestPoolAcrualSystem1(t *testing.T) {
 
 	order := app.NewOrder(conf, mockStorage, nil)
 
+	mLog := lmocks.NewMockLogger(ctrl)
+	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
+
+	domain.SetMainLogger(mLog)
+
 	order.PoolAcrualSystem(ctx)
 
 	time.Sleep(10 * time.Second)
@@ -422,7 +428,7 @@ func TestPoolAcrualSystem2(t *testing.T) {
 
 	acrualVal := 64.
 
-	mockAccrualSystem.EXPECT().Update(gomock.Any(), gomock.Any()).DoAndReturn(
+	mockAccrualSystem.EXPECT().GetStatus(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(ctx context.Context, orderNum domain.OrderNumber) (*domain.AccrualData, error) {
 			return &domain.AccrualData{
 				Number:  orderNum,
@@ -447,6 +453,11 @@ func TestPoolAcrualSystem2(t *testing.T) {
 	}
 
 	order := app.NewOrder(conf, mockStorage, mockAccrualSystem)
+
+	mLog := lmocks.NewMockLogger(ctrl)
+	mLog.EXPECT().Infow(gomock.Any(), gomock.Any()).AnyTimes()
+
+	domain.SetMainLogger(mLog)
 
 	order.PoolAcrualSystem(ctx)
 
