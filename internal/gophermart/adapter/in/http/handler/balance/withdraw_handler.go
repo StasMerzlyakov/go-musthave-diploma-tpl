@@ -43,7 +43,7 @@ func WithdrawHandler(app WithdrawApp) http.HandlerFunc {
 		}
 
 		if err = app.Withdraw(req.Context(), data); err != nil {
-			http.Error(w, "withraw error", domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, "withraw error", domain.MapDomainErrorToHTTPStatusErr(err))
 		}
 	}
 }

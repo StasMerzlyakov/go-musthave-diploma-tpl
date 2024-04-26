@@ -44,7 +44,7 @@ func LoginHandler(app LogingApp) http.HandlerFunc {
 
 		tokenString, err := app.Login(req.Context(), login)
 		if err != nil {
-			http.Error(w, "registration error", domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, "registration error", domain.MapDomainErrorToHTTPStatusErr(err))
 			return
 		}
 

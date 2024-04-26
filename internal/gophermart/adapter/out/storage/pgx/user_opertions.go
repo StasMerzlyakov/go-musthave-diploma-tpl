@@ -23,7 +23,7 @@ func (st *storage) RegisterUser(ctx context.Context, ld *domain.LoginData) (int,
 
 	var userID int
 	if err := st.pPool.QueryRow(ctx,
-		"insert into userInfo(login, hash, salt) values ($1, $2, $3) returning userId",
+		"insert into userInfo(login, hash, salt) values ($1, $2, $3) returning userID",
 		ld.Login,
 		ld.Hash,
 		ld.Salt).Scan(&userID); err == nil {
@@ -53,7 +53,7 @@ func (st *storage) GetUserData(ctx context.Context, login string) (*domain.Login
 	logger.Infow("storage.GetUserData", "status", "start")
 
 	var data domain.LoginData
-	err = st.pPool.QueryRow(ctx, "select userId, login, hash, salt from userInfo where login = $1", login).Scan(&data.UserID, &data.Login, &data.Hash, &data.Salt)
+	err = st.pPool.QueryRow(ctx, "select userID, login, hash, salt from userInfo where login = $1", login).Scan(&data.UserID, &data.Login, &data.Hash, &data.Salt)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -40,7 +40,7 @@ func GetHandler(app GetOrderApp) http.HandlerFunc {
 		orderData, err := app.All(req.Context())
 		if err != nil {
 			logger.Errorw(handlerName, "err", err.Error())
-			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 			return
 		}
 
@@ -48,7 +48,7 @@ func GetHandler(app GetOrderApp) http.HandlerFunc {
 
 		if err := json.NewEncoder(w).Encode(orderData); err != nil {
 			logger.Errorw(handlerName, "err", fmt.Sprintf("json encode error: %v", err.Error()))
-			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 			return
 		}
 	}

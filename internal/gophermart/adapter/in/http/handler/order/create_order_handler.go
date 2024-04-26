@@ -43,7 +43,7 @@ func CreateHandler(app CreateOrderApp) http.HandlerFunc {
 		err = app.New(req.Context(), domain.OrderNumber(numberStr))
 
 		if err != nil {
-			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 			return
 		}
 

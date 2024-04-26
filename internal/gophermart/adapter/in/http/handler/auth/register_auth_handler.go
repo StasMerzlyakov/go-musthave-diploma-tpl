@@ -45,7 +45,7 @@ func RegisterHandler(app RegisterApp) http.HandlerFunc {
 
 		tokenString, err := app.Register(req.Context(), registration)
 		if err != nil {
-			http.Error(w, "registration error", domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, "registration error", domain.MapDomainErrorToHTTPStatusErr(err))
 			return
 		}
 

@@ -37,7 +37,7 @@ func main() {
 	srvConf, err := config.LoadGophermartConfig()
 
 	//srvConf.AccrualSystemAddress = "http://localhost:8080"
-	//srvConf.DatabaseUri = "postgres://postgres:postgres@localhost:5432/gophermarket"
+	//srvConf.DatabaseURI = "postgres://postgres:postgres@localhost:5432/gophermarket"
 	//srvConf.RunAddress = ":8081"
 
 	if err != nil {

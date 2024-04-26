@@ -39,7 +39,7 @@ func GetHandler(app GetBalanceApp) http.HandlerFunc {
 
 		data, err := app.Get(req.Context())
 		if err != nil {
-			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 			return
 		}
 
@@ -47,7 +47,7 @@ func GetHandler(app GetBalanceApp) http.HandlerFunc {
 
 		if err := json.NewEncoder(w).Encode(data); err != nil {
 			logger.Infow(handlerName, "err", fmt.Sprintf("json encode error: %v", err.Error()))
-			http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+			http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 			return
 		}
 	}

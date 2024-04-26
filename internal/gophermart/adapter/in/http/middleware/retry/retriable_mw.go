@@ -65,7 +65,7 @@ func NewRetriableRequestMWConf(firstRetryDelay time.Duration, delayIncrement tim
 			err = invoker.Invoke(req.Context(), invokableFn)
 			if err != nil {
 				log.Errorw("RetriableRequestMW", "err", err.Error())
-				http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+				http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 				return
 			}
 

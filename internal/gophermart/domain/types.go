@@ -60,7 +60,7 @@ type Balance struct {
 }
 
 type UserBalance struct {
-	BalanceId int
+	BalanceID int
 	UserID    int
 	Release   int
 	Balance

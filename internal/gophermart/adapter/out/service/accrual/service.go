@@ -20,7 +20,7 @@ func New(conf *config.GophermartConfig) *acService {
 	}
 }
 
-const pathUrl = "/api/orders/{number}"
+const pathURL = "/api/orders/{number}"
 
 type acService struct {
 	client *resty.Client
@@ -38,7 +38,7 @@ func (ac *acService) GetStatus(ctx context.Context, orderNum domain.OrderNumber)
 
 	req.SetPathParam("number", string(orderNum))
 
-	resp, err := req.Get(pathUrl)
+	resp, err := req.Get(pathURL)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
 	}

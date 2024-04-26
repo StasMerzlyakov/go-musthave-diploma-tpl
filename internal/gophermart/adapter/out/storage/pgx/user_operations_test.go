@@ -25,7 +25,7 @@ func TestAuthFunctions(t *testing.T) {
 	domain.SetMainLogger(logger)
 	storage := pgx.NewStorage(ctx, &config.GophermartConfig{
 		MaxConns:    5,
-		DatabaseUri: connString,
+		DatabaseURI: connString,
 	})
 
 	defer func() {

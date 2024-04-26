@@ -20,7 +20,7 @@ var (
 	ErrBalanceChanged             = errors.New("BalanceChanged")             // Внутренняя ошибка - баланс был изменен; нужно повторить операцию
 )
 
-func MapDomainErrorToHttpStatusErr(err error) int {
+func MapDomainErrorToHTTPStatusErr(err error) int {
 	if errors.Is(err, ErrDataFormat) {
 		return http.StatusBadRequest
 	}

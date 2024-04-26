@@ -45,14 +45,14 @@ func NewJwtRequestMW(app AuthApp) middleware.Middleware {
 			authData, err := app.Authorize(req.Context(), tokenString)
 			if err != nil {
 				log.Infow("JwtRequestMW", "err", err.Error())
-				http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+				http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 				return
 			}
 
 			ctx, err := domain.EnrichWithAuthData(req.Context(), authData)
 			if err != nil {
 				log.Infow("JwtRequestMW", "err", err.Error())
-				http.Error(w, err.Error(), domain.MapDomainErrorToHttpStatusErr(err))
+				http.Error(w, err.Error(), domain.MapDomainErrorToHTTPStatusErr(err))
 				return
 			}
 

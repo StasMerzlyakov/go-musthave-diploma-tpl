@@ -118,7 +118,7 @@ func (b *balance) Withdraw(ctx context.Context, withdraw *domain.WithdrawData) e
 	newWithdrawn := uBalance.Balance.Withdrawn + withdraw.Sum
 
 	newBalance := &domain.UserBalance{
-		BalanceId: uBalance.BalanceId,
+		BalanceID: uBalance.BalanceID,
 		UserID:    uBalance.UserID,
 		Release:   uBalance.Release,
 		Balance: domain.Balance{
@@ -154,21 +154,21 @@ func (b *balance) Withdrawals(ctx context.Context) ([]domain.WithdrawalData, err
 		return nil, fmt.Errorf("%w: logger not found in context", domain.ErrServerInternal)
 	}
 
-	userId, err := domain.GetUserID(ctx)
+	userID, err := domain.GetUserID(ctx)
 	if err != nil {
 		logger.Errorw("balance.Withdrawals", "err", err.Error())
 		return nil, domain.ErrUserIsNotAuthorized
 	}
 
-	withdrawals, err := b.balanceStorage.Withdrawals(ctx, userId)
+	withdrawals, err := b.balanceStorage.Withdrawals(ctx, userID)
 	if err != nil {
 		logger.Errorw("balance.Withdrawals", "err", err.Error())
 		return nil, fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
 	}
 
 	if withdrawals == nil {
-		logger.Errorw("balance.Withdrawals", "err", fmt.Sprintf("user by id %v not found", userId))
-		return nil, fmt.Errorf("%w: user by id %v not found", domain.ErrNotFound, userId)
+		logger.Errorw("balance.Withdrawals", "err", fmt.Sprintf("user by id %v not found", userID))
+		return nil, fmt.Errorf("%w: user by id %v not found", domain.ErrNotFound, userID)
 	}
 
 	return withdrawals, nil
@@ -206,7 +206,7 @@ func (b *balance) balanceUpdater(ctx context.Context, orderDataChan <-chan *doma
 			newCurrentValue := uBalance.Current + *orderData.Accrual
 
 			newBalance := &domain.UserBalance{
-				BalanceId: uBalance.BalanceId,
+				BalanceID: uBalance.BalanceID,
 				UserID:    uBalance.UserID,
 				Release:   uBalance.Release,
 				Balance: domain.Balance{
@@ -229,7 +229,7 @@ func (b *balance) balanceUpdater(ctx context.Context, orderDataChan <-chan *doma
 
 func (b *balance) poolOrders(ctx context.Context, orderDataChan chan<- *domain.OrderData) {
 	var sleepChan <-chan time.Time
-	var orderDataChanInternal chan<- *domain.OrderData = orderDataChan
+	var orderDataChanInternal = orderDataChan
 	var nextOrd *domain.OrderData
 
 	opName := "balance.poolOrders"

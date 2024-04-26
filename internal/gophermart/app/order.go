@@ -132,7 +132,7 @@ func (ord *order) refreshOrderStatus(ctx context.Context,
 	logger := domain.GetMainLogger()
 
 	// Пытаюсь осмыслить https://go.dev/blog/io2013-talk-concurrency
-	var ordNumInternalChan <-chan *domain.OrderNumber = ordNumChan
+	var ordNumInternalChan = ordNumChan
 	var sleepChan <-chan time.Time
 
 	for {
@@ -165,9 +165,9 @@ func (ord *order) orderStatusUpdater(ctx context.Context, acrualDataChan <-chan 
 	var orders []domain.OrderData
 
 	// Пытаюсь осмыслить https://go.dev/blog/io2013-talk-concurrency
-	var waitAcrualsTimeoutChan <-chan time.Time = time.After(2 * time.Second)
+	var waitAcrualsTimeoutChan = time.After(2 * time.Second)
 	var sleepAfterErrChan <-chan time.Time
-	var acrualDataInternalChan <-chan *domain.AccrualData = acrualDataChan
+	var acrualDataInternalChan = acrualDataChan
 
 	logger := domain.GetMainLogger()
 
@@ -228,7 +228,7 @@ func (ord *order) orderStatusUpdater(ctx context.Context, acrualDataChan <-chan 
 // Ищет в хранилище запросы на начисление в статусе OrderStratusNew
 func (ord *order) poolOrders(ctx context.Context, ordNumChan chan<- *domain.OrderNumber) {
 	var sleepChan <-chan time.Time
-	var ordNumChanInternal chan<- *domain.OrderNumber = ordNumChan
+	var ordNumChanInternal = ordNumChan
 	var nexNum *domain.OrderNumber
 
 	logger := domain.GetMainLogger()

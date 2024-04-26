@@ -26,18 +26,18 @@ func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 	var number domain.OrderNumber
 
 	if err := st.pPool.QueryRow(ctx,
-		`insert into orderData(number, userId, status, uploaded_at) values ($1, $2, $3, $4) 
+		`insert into orderData(number, userID, status, uploaded_at) values ($1, $2, $3, $4) 
 		on conflict("number") do nothing returning number;
 	  `, data.Number, data.UserID, data.Status, time.Time(data.UploadedAt).UTC()).Scan(&number); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			// запись с таким number уже есть; проверим какому пользователю принадлежит
-			var userId int
-			err = st.pPool.QueryRow(ctx, `select userId from orderData where number = $1`, data.Number).Scan(&userId)
+			var userID int
+			err = st.pPool.QueryRow(ctx, `select userID from orderData where number = $1`, data.Number).Scan(&userID)
 			if err != nil {
 				logger.Errorw("storage.Upload", "err", err.Error())
 				return domain.ErrServerInternal
 			}
-			if userId == data.UserID {
+			if userID == data.UserID {
 				return domain.ErrOrderNumberAlreadyUploaded
 			} else {
 				return domain.ErrDublicateOrderNumber
@@ -61,7 +61,7 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 	}
 
 	rows, err := st.pPool.Query(ctx,
-		`select number, userId, status, accrual, uploaded_at from orderData where userId = $1`,
+		`select number, userID, status, accrual, uploaded_at from orderData where userID = $1`,
 		userID,
 	)
 
@@ -147,7 +147,7 @@ func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) (
 		 where number in 
 		   (select number from orderdata where status = $2 and score < $3 limit $4) 
 		 returning 
-		    number, userId, status, accrual, uploaded_at;`,
+		    number, userID, status, accrual, uploaded_at;`,
 		time.Now().Add(st.processingScoreDelta),
 		string(status),
 		time.Now(),

@@ -25,7 +25,7 @@ func TestBalanceOperations(t *testing.T) {
 	domain.SetMainLogger(logger)
 	storage := pgx.NewStorage(ctx, &config.GophermartConfig{
 		MaxConns:             5,
-		DatabaseUri:          connString,
+		DatabaseURI:          connString,
 		ProcessingLimit:      5,
 		ProcessingScoreDelta: 10 * time.Second,
 	})

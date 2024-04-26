@@ -10,7 +10,7 @@ import (
 type GophermartConfig struct {
 	TokenExp              time.Duration `env:"JWT_EXP"`
 	TokenSecret           string        `env:"JWT_SECRET"`
-	DatabaseUri           string        `env:"DATABASE_URI"`
+	DatabaseURI           string        `env:"DATABASE_URI"`
 	RunAddress            string        `env:"RUN_ADDRESS"`
 	AccrualSystemAddress  string        `env:"ACCRUAL_SYSTEM_ADDRESS"`
 	AcrualSystemPoolCount int           `env:"ACRUAL_SYSTEM_POOL_COUNT"`
@@ -37,7 +37,7 @@ func LoadGophermartConfig() (*GophermartConfig, error) {
 	flag.DurationVar(&srvConf.ProcessingScoreDelta, "pDelta", 5*time.Second, "order processing delta")
 
 	flag.StringVar(&srvConf.RunAddress, "a", ":8080", "server address (format \":PORT\")")
-	flag.StringVar(&srvConf.DatabaseUri, "d", "", "PostgreSQL URL like 'postgres://username:password@localhost:5432/database_name'")
+	flag.StringVar(&srvConf.DatabaseURI, "d", "", "PostgreSQL URL like 'postgres://username:password@localhost:5432/database_name'")
 	flag.StringVar(&srvConf.AccrualSystemAddress, "r", "http://localhost:8080", "accural service address (format \"http://IP:PORT\")")
 
 	flag.Parse()

@@ -30,7 +30,7 @@ func initializePGXConf(ctx context.Context, gConf *config.GophermartConfig) *sto
 
 	logger.Infow("initializePGXConf", "status", "start")
 
-	pConf, err := pgxpool.ParseConfig(gConf.DatabaseUri)
+	pConf, err := pgxpool.ParseConfig(gConf.DatabaseURI)
 	if err != nil {
 		panic(err)
 	}
@@ -109,25 +109,25 @@ func (st *storage) init(ctx context.Context, logger domain.Logger) error {
 
 	tx.Exec(ctx, `
 	create table if not exists balance(
-		balanceId serial,
+		balanceID serial,
 		userId int not null,
 		current float8 not null default 0,
 		withdrawn float8 not null default 0,
 		release int not null default 0,
-		primary key(balanceId),
+		primary key(balanceID),
 		unique (userId),
 		foreign key (userId) references userInfo(userId)
 		);`)
 
 	tx.Exec(ctx, `
 	create table if not exists withdrawal(
-		withdrawalId serial,
-		balanceId int not null,
+		withdrawalID serial,
+		balanceID int not null,
 		number varchar(255) not null,
 		sum float8 not null,
 		processed_at  timestamptz not null default now(),
-		primary key(withdrawalId),
-		foreign key (balanceId) references balance(balanceId)
+		primary key(withdrawalID),
+		foreign key (balanceID) references balance(balanceID)
 		);`)
 
 	return tx.Commit(ctx)

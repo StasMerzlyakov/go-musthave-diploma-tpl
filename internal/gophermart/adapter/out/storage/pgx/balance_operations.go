@@ -24,15 +24,15 @@ func (st *storage) Balance(ctx context.Context, userID int) (*domain.UserBalance
 
 	if err := st.pPool.QueryRow(ctx,
 		` with ins as (
-			insert into balance(userId) values ($1) on conflict (userId) do nothing 
+			insert into balance(userID) values ($1) on conflict (userID) do nothing 
 			-- явно укащываб список полей, для исключения возможных ошибок
-			 returning balanceId, userId, current, withdrawn, release 
+			 returning balanceID, userID, current, withdrawn, release 
 			)
-			select balanceId, userId, current, withdrawn, release from ins
+			select balanceID, userID, current, withdrawn, release from ins
 			union
-			select balanceId, userId, current, withdrawn, release from balance
-			where userId=$1;`,
-		userID).Scan(&userBalance.BalanceId, &userBalance.UserID, &userBalance.Current, &userBalance.Release, &userBalance.Release); err == nil {
+			select balanceID, userID, current, withdrawn, release from balance
+			where userID=$1;`,
+		userID).Scan(&userBalance.BalanceID, &userBalance.UserID, &userBalance.Current, &userBalance.Release, &userBalance.Release); err == nil {
 		logger.Infow("storage.Balance", "status", "success")
 		return &userBalance, nil
 	} else {
@@ -84,13 +84,13 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 		return domain.ErrServerInternal
 	}
 
-	var balanceId int
+	var balanceID int
 	err = tx.QueryRow(ctx,
-		`update balance set current = $1, withdrawn = $2 ,release = release+1 where userId=$3 and release=$4 returning balanceId`,
+		`update balance set current = $1, withdrawn = $2 ,release = release+1 where userID=$3 and release=$4 returning balanceID`,
 		balance.Current,
 		balance.Withdrawn,
 		balance.UserID,
-		balance.Release).Scan(&balanceId)
+		balance.Release).Scan(&balanceID)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -137,19 +137,19 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 
 	tx.Exec(ctx,
 		`insert into withdrawal(balancerId, number, sum, processed_at) values($1, $2, $3, $4)`,
-		balance.BalanceId,
+		balance.BalanceID,
 		withdraw.Order,
 		withdraw.Sum,
 		time.Time(withdraw.ProcessedAt),
 	)
 
-	var balanceId int
+	var balanceID int
 	err = tx.QueryRow(ctx,
-		`update balance set current = $1, withdrawn = $2 ,release = release+1 where userId=$3 and release=$4 returning balanceId`,
+		`update balance set current = $1, withdrawn = $2 ,release = release+1 where userID=$3 and release=$4 returning balanceID`,
 		balance.Current,
 		balance.Withdrawn,
 		balance.UserID,
-		balance.Release).Scan(&balanceId)
+		balance.Release).Scan(&balanceID)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -179,7 +179,7 @@ func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.Withdr
 
 	rows, err := st.pPool.Query(ctx,
 		`select w.number, w.sum, w.processed_at from withdrawal w 
-		inner join balance b on b.balanceId = w.balanceId where b.userId=$1`,
+		inner join balance b on b.balanceID = w.balanceID where b.userID=$1`,
 		userID,
 	)
 
@@ -192,13 +192,13 @@ func (st *storage) Withdrawals(ctx context.Context, userID int) ([]domain.Withdr
 
 	for rows.Next() {
 		var withdrawal domain.WithdrawalData
-		var processed_at time.Time
-		err = rows.Scan(&withdrawal.Order, &withdrawal.Sum, &processed_at)
+		var processedAt time.Time
+		err = rows.Scan(&withdrawal.Order, &withdrawal.Sum, &processedAt)
 		if err != nil {
 			logger.Infow("storage.Withdrawals", "err", err.Error())
 			return nil, domain.ErrServerInternal
 		}
-		withdrawal.ProcessedAt = domain.RFC3339Time(processed_at)
+		withdrawal.ProcessedAt = domain.RFC3339Time(processedAt)
 		withdrawals = append(withdrawals, withdrawal)
 	}
 

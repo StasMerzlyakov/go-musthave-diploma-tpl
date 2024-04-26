@@ -502,7 +502,7 @@ func TestPoolOrders2(t *testing.T) {
 		DoAndReturn(func(ctx context.Context, userID int) (*domain.UserBalance, error) {
 			require.Equal(t, 100, userID)
 			return &domain.UserBalance{
-				BalanceId: 10,
+				BalanceID: 10,
 				UserID:    100,
 				Release:   0,
 				Balance: domain.Balance{
@@ -517,7 +517,7 @@ func TestPoolOrders2(t *testing.T) {
 			require.NotNil(t, balance)
 			require.NotNil(t, order)
 
-			require.Equal(t, 10, balance.BalanceId)
+			require.Equal(t, 10, balance.BalanceID)
 			require.Equal(t, 100, balance.UserID)
 			require.Equal(t, 0, balance.Release)
 
