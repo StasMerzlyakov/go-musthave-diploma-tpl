@@ -3,12 +3,12 @@ package app
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
-	"math/rand"
 	"regexp"
 	"time"
 
