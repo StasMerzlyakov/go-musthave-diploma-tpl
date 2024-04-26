@@ -247,6 +247,7 @@ Loop:
 				sleepChan = time.After(2 * time.Second)
 				ordNumChanInternal = nil
 			} else {
+				logger.Infow("order.poolOrders", "status", "found", "count", len(orders))
 				sleepChan = nil
 				var num = orders[0].Number
 				nexNum = &num

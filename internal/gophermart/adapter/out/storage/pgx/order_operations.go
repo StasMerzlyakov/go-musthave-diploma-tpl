@@ -176,14 +176,11 @@ func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) (
 	err = rows.Err()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			logger.Infow("storage.ForProcessing", "status", "not found")
 			return nil, nil
 		}
 		logger.Infow("storage.ForProcessing", "err", err.Error())
 		return nil, domain.ErrServerInternal
 	}
-	logger.Infow("storage.ForProcessing", "status", "found", "count", len(forProcessing))
-
 	return forProcessing, nil
 }
 

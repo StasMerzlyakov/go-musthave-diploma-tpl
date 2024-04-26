@@ -178,24 +178,26 @@ func (b *balance) balanceUpdater(ctx context.Context, orderDataChan <-chan *doma
 	var sleepAfterErrChan <-chan time.Time
 	var orderDataChanInternal = orderDataChan
 
+	opName := "balance.balanceUpdater"
+
 	logger := domain.GetMainLogger()
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Infow("balance.orderDataUpdater", "status", "complete")
+			logger.Infow(opName, "status", "complete")
 			return
 		case <-sleepAfterErrChan:
 			sleepAfterErrChan = nil
 			orderDataChanInternal = orderDataChan
 		case orderData, ok := <-orderDataChanInternal:
 			if !ok {
-				logger.Infow("balance.orderDataUpdater", "status", "complete")
+				logger.Infow(opName, "status", "complete")
 				return
 			}
 			userID := orderData.UserID
 			uBalance, err := b.balanceStorage.Balance(ctx, userID)
 			if err != nil {
-				logger.Infow("balance.orderDataUpdater", "err", err.Error())
+				logger.Infow(opName, "err", err.Error())
 				sleepAfterErrChan = time.After(5 * time.Second)
 				orderDataChanInternal = nil
 				continue
@@ -215,12 +217,12 @@ func (b *balance) balanceUpdater(ctx context.Context, orderDataChan <-chan *doma
 
 			orderData.Status = domain.OrderStratusProcessed
 			if err = b.balanceStorage.UpdateBalanceByOrder(ctx, newBalance, orderData); err != nil {
-				logger.Errorw("balance.orderDataUpdater", "err", err.Error())
+				logger.Errorw(opName, "err", err.Error())
 				sleepAfterErrChan = time.After(5 * time.Second)
 				orderDataChanInternal = nil
 				continue
 			}
-			logger.Infow("balance.orderDataUpdater", "status", "processed", "orderNum", orderData.Number)
+			logger.Infow(opName, "status", "processed", "orderNum", orderData.Number)
 		}
 	}
 }
@@ -230,21 +232,24 @@ func (b *balance) poolOrders(ctx context.Context, orderDataChan chan<- *domain.O
 	var orderDataChanInternal chan<- *domain.OrderData = orderDataChan
 	var nextOrd *domain.OrderData
 
+	opName := "balance.poolOrders"
+
 	logger := domain.GetMainLogger()
 Loop:
 	for {
 		orders, err := b.balanceStorage.GetByStatus(ctx, domain.OrderStratusProcessing)
 		if err != nil {
-			logger.Errorw("balance.PoolOrders", "err", err.Error())
+			logger.Errorw(opName, "err", err.Error())
 			sleepChan = time.After(5 * time.Second)
 			orderDataChanInternal = nil
 			clear(orders) // для защиты от мусора
 		} else {
 			if len(orders) == 0 {
-				logger.Infow("balance.PoolOrders", "status", "no record for pool")
+				logger.Infow(opName, "status", "no record for pool")
 				sleepChan = time.After(2 * time.Second) // статусов нужных нет, ждем две секунджы
 				orderDataChanInternal = nil
 			} else {
+				logger.Infow(opName, "status", "found", "count", len(orders))
 				sleepChan = nil
 				nextOrd = &orders[0]
 			}
@@ -254,7 +259,7 @@ Loop:
 		for {
 			select {
 			case <-ctx.Done():
-				logger.Infow("balance.PoolOrders", "status", "complete")
+				logger.Infow(opName, "status", "complete")
 				return
 			case <-sleepChan:
 				sleepChan = nil
