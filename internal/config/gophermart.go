@@ -38,7 +38,7 @@ func LoadGophermartConfig() (*GophermartConfig, error) {
 
 	flag.StringVar(&srvConf.RunAddress, "a", ":8080", "server address (format \":PORT\")")
 	flag.StringVar(&srvConf.DatabaseUri, "d", "", "PostgreSQL URL like 'postgres://username:password@localhost:5432/database_name'")
-	flag.StringVar(&srvConf.AccrualSystemAddress, "r", "localhost:8080", "server address (format \":PORT\")")
+	flag.StringVar(&srvConf.AccrualSystemAddress, "r", "http://localhost:8080", "accural service address (format \"http://IP:PORT\")")
 
 	flag.Parse()
 

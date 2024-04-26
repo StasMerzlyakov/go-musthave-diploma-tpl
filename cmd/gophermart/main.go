@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/StasMerzlyakov/gophermart/internal/config"
+	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/in/http/middleware"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/in/http/middleware/logging"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/in/http/middleware/retry"
 
@@ -86,22 +87,13 @@ func main() {
 		r.Post("/register", hauth.RegisterHandler(auth))
 		r.Post("/login", hauth.LoginHandler(auth))
 
-		r.Route("/orders", func(r chi.Router) {
-			r.Use(authMW)
-			r.Get("", horder.GetHandler(order))
-			r.Post("", horder.CreateHandler(order))
-		})
+		r.Get("/orders", middleware.ConveyorFunc(horder.GetHandler(order), authMW))
+		r.Post("/orders", middleware.ConveyorFunc(horder.CreateHandler(order), authMW))
 
-		r.Route("/balance", func(r chi.Router) {
-			r.Use(authMW)
-			r.Get("", hbalance.GetHandler(balance))
-			r.Post("/withdraw", hbalance.WithdrawHandler(balance))
-		})
+		r.Get("/balance", middleware.ConveyorFunc(hbalance.GetHandler(balance), authMW))
+		r.Post("/withdraw", middleware.ConveyorFunc(hbalance.WithdrawHandler(balance), authMW))
 
-		r.Route("/withdrawals", func(r chi.Router) {
-			r.Use(authMW)
-			r.Get("", hbalance.GetWithdrawals(balance))
-		})
+		r.Get("/withdrawals", middleware.ConveyorFunc(hbalance.GetWithdrawals(balance), authMW))
 	})
 
 	// ------- Запуск сервера -----
