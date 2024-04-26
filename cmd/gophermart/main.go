@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/StasMerzlyakov/gophermart/internal/config"
-	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/storage/pgx"
+	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/out/storage/pgx"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/domain"
 	"go.uber.org/zap"
 )
