@@ -43,25 +43,25 @@ func (ac *acService) GetStatus(ctx context.Context, orderNum domain.OrderNumber)
 		return nil, fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
 	}
 
-	if resp.StatusCode() == http.StatusOK {
+	statusCode := resp.StatusCode()
+	switch statusCode {
+	case http.StatusOK:
 		var accrualData domain.AccrualData
 		if err = json.Unmarshal(resp.Body(), &accrualData); err != nil {
 			return nil, fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
 		}
 		logger.Infow("acrual.GetStatus", "msg", fmt.Sprintf("order %v found", orderNum))
 		return &accrualData, nil
-	}
-
-	if resp.StatusCode() == http.StatusNoContent {
+	case http.StatusNoContent:
 		logger.Infow("acrual.GetStatus", "msg", fmt.Sprintf("order %v not found", orderNum))
 		return nil, nil
-	}
-
-	if resp.StatusCode() == http.StatusTooManyRequests {
+	case http.StatusTooManyRequests:
 		logger.Errorw("acrual.GetStatus", "err", "too many requests")
 		return nil, fmt.Errorf("%w: too many requests", domain.ErrServerInternal)
+	default:
+		errMsg := fmt.Sprintf("unexpected status code %v", statusCode)
+		logger.Errorw("acrual.GetStatus", "err", errMsg)
+		return nil, fmt.Errorf("%w: %v", domain.ErrServerInternal, errMsg)
 	}
 
-	logger.Errorw("acrual.GetStatus", "err", fmt.Sprintf("unexpected status code %v", resp.StatusCode()))
-	return nil, fmt.Errorf("%w: unexpected status code %v", domain.ErrServerInternal, resp.StatusCode())
 }

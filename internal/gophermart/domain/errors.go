@@ -6,6 +6,7 @@ import (
 )
 
 var (
+	ErrServerImplementationError  = errors.New("ImplementationError")        // Ошибка на сервере связанная с ошибкой в реализации или конфигурации
 	ErrServerInternal             = errors.New("InternalError")              // Ошибка на сервере
 	ErrDataFormat                 = errors.New("DataFormatError")            // Неверный формат запроса
 	ErrWrongOrderNumber           = errors.New("WrongOrderNumber")           // Неверный номера заказа
@@ -69,5 +70,8 @@ func MapDomainErrorToHTTPStatusErr(err error) int {
 		return http.StatusInternalServerError
 	}
 
+	if errors.Is(err, ErrServerImplementationError) {
+		return http.StatusInternalServerError
+	}
 	return http.StatusInternalServerError
 }

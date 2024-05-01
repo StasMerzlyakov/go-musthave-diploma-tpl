@@ -51,12 +51,12 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 
 	if balance == nil {
 		logger.Errorw("storage.UpdateBalanceByOrder", "err", "balance is nil")
-		return fmt.Errorf("%w: balance is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: balance is nil", domain.ErrServerImplementationError)
 	}
 
 	if orderData == nil {
 		logger.Errorw("storage.UpdateBalanceByOrder", "err", "orderData is nil")
-		return fmt.Errorf("%w: orderData is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: orderData is nil", domain.ErrServerImplementationError)
 	}
 
 	tx, err := st.pPool.Begin(ctx)
@@ -118,12 +118,12 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 
 	if balance == nil {
 		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "balance is nil")
-		return fmt.Errorf("%w: balance is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: balance is nil", domain.ErrServerImplementationError)
 	}
 
 	if withdraw == nil {
 		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "withdraw is nil")
-		return fmt.Errorf("%w: withdraw is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: withdraw is nil", domain.ErrServerImplementationError)
 	}
 
 	tx, err := st.pPool.Begin(ctx)

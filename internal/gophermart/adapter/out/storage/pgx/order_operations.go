@@ -20,7 +20,7 @@ func (st *storage) Upload(ctx context.Context, data *domain.OrderData) error {
 
 	if data == nil {
 		logger.Errorw("storage.Upload", "err", "data is nil")
-		return domain.ErrServerInternal
+		return domain.ErrServerImplementationError
 	}
 
 	var number domain.OrderNumber
@@ -97,41 +97,6 @@ func (st *storage) Orders(ctx context.Context, userID int) ([]domain.OrderData, 
 	return orders, nil
 }
 
-func (st *storage) UpdateOrder(ctx context.Context, number domain.OrderNumber, status domain.OrderStatus, accrual *float64) error {
-
-	logger, err := domain.GetCtxLogger(ctx)
-	if err != nil {
-		fmt.Printf("storage.UpdateOrder error: can't extract logger")
-		return err
-	}
-
-	rows, err := st.pPool.Query(ctx,
-		`update orderData set status = $1, accrual = $2 where number = $3`,
-		string(status), accrual, string(number),
-	)
-
-	if err != nil {
-		logger.Errorw("storage.UpdateOrder", "err", err.Error())
-		return domain.ErrServerInternal
-	}
-
-	defer rows.Close()
-
-	if rows.Next() {
-		return nil
-	}
-
-	err = rows.Err()
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			logger.Infow("storage.UpdateOrder", "status", "not found")
-			return domain.ErrNotFound
-		}
-		return fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
-	}
-	return nil
-}
-
 func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) ([]domain.OrderData, error) {
 
 	logger, err := domain.GetCtxLogger(ctx)
@@ -184,7 +149,7 @@ func (st *storage) GetByStatus(ctx context.Context, status domain.OrderStatus) (
 	return forProcessing, nil
 }
 
-func (st *storage) UpdateBatch(ctx context.Context, orders []domain.OrderData) error {
+func (st *storage) UpdateOrders(ctx context.Context, orders []domain.OrderData) error {
 
 	logger, err := domain.GetCtxLogger(ctx)
 	if err != nil {

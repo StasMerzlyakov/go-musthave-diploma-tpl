@@ -437,7 +437,7 @@ func TestPoolAcrualSystem2(t *testing.T) {
 			}, nil
 		}).Times(1)
 
-	mockStorage.EXPECT().UpdateBatch(gomock.Any(), gomock.Any()).
+	mockStorage.EXPECT().UpdateOrders(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(ctx context.Context, orders []domain.OrderData) error {
 			require.Equal(t, 1, len(orders))
 			order := orders[0]

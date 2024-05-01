@@ -83,7 +83,11 @@ func TestBalanceOperations(t *testing.T) {
 	require.NoError(t, err)
 
 	accrual := domain.Float64Ptr(50.)
-	err = storage.UpdateOrder(loggedCtx, orderNum, domain.OrderStratusProcessing, accrual)
+	err = storage.UpdateOrders(loggedCtx, []domain.OrderData{{
+		Status:  domain.OrderStratusProcessing,
+		Accrual: accrual,
+		Number:  orderNum,
+	}})
 	require.NoError(t, err)
 
 	orderData.Accrual = accrual

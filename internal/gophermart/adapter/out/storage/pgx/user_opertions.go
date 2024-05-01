@@ -19,6 +19,11 @@ func (st *storage) RegisterUser(ctx context.Context, ld *domain.LoginData) (int,
 		return -1, err
 	}
 
+	if ld == nil {
+		logger.Errorw("storage.RegisterUser", "err", "data is nil")
+		return -1, domain.ErrServerImplementationError
+	}
+
 	logger.Infow("storage.RegisterUser", "status", "start")
 
 	var userID int

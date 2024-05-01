@@ -28,8 +28,7 @@ func NewOrder(conf *config.GophermartConfig,
 type OrderStorage interface {
 	Upload(ctx context.Context, data *domain.OrderData) error
 	Orders(ctx context.Context, userID int) ([]domain.OrderData, error)
-	UpdateOrder(ctx context.Context, number domain.OrderNumber, status domain.OrderStatus, accrual *float64) error
-	UpdateBatch(ctx context.Context, orders []domain.OrderData) error
+	UpdateOrders(ctx context.Context, orders []domain.OrderData) error
 	GetByStatus(ctx context.Context, statuse domain.OrderStatus) ([]domain.OrderData, error)
 }
 
@@ -183,7 +182,7 @@ func (ord *order) orderStatusUpdater(ctx context.Context, acrualDataChan <-chan 
 			acrualDataInternalChan = acrualDataChan
 		case <-waitAcrualsTimeoutChan:
 			if len(orders) > 0 {
-				err := ord.storage.UpdateBatch(ctx, orders)
+				err := ord.storage.UpdateOrders(ctx, orders)
 				if err != nil {
 					// Произошла ошибка - запускаем sleepChan канал в надежде на восстановление
 					logger.Errorw("order.UpdateBatch", "err", err.Error())
@@ -215,7 +214,7 @@ func (ord *order) orderStatusUpdater(ctx context.Context, acrualDataChan <-chan 
 			}
 
 			if len(orders) == ord.batchSize {
-				err := ord.storage.UpdateBatch(ctx, orders)
+				err := ord.storage.UpdateOrders(ctx, orders)
 				if err != nil {
 					// Произошла ошибка - запускаем sleepChan канал в надежде на восстановление
 					logger.Errorw("order.UpdateBatch", "err", err.Error())
