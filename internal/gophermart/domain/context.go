@@ -6,22 +6,68 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
+
+	_ "github.com/golang/mock/gomock"        // обязательно, требуется в сгенерированных mock-файлах,
+	_ "github.com/golang/mock/mockgen/model" // обязательно для корректного запуска mockgen
 )
 
 type ContextKey string
 
-const KeyLogger = ContextKey("Logger")
-const KeyAuthData = ContextKey("AuthData")
+const keyRequestID = ContextKey("RequestID")
+const keyLogger = ContextKey("Logger")
+const keyAuthData = ContextKey("AuthData")
 
-func NewContext(ctx context.Context, authData *AuthData, requestID uuid.UUID, zL *zap.SugaredLogger) context.Context {
-	loggerCtx := context.WithValue(ctx, KeyLogger, newLogger(authData.UserID, requestID, zL))
-	authDataCtx := context.WithValue(loggerCtx, KeyAuthData, authData)
-	return authDataCtx
+const LoggerKeyRequestID = "requestID"
+const LoggerKeyUserID = "userID"
+
+//go:generate mockgen -destination "./mocks/$GOFILE" -package mocks . Logger
+type Logger interface {
+	Debugw(msg string, keysAndValues ...any)
+	Infow(msg string, keysAndValues ...any)
+	Errorw(msg string, keysAndValues ...any)
+}
+
+func EnrichWithRequestIDLogger(ctx context.Context, requestID uuid.UUID, logger Logger) context.Context {
+	requestIDLogger := &requestIDLogger{
+		internalLogger: logger,
+		requestID:      requestID.String(),
+	}
+	resultCtx := context.WithValue(ctx, keyLogger, requestIDLogger)
+	return resultCtx
+}
+
+func EnrichWithAuthData(ctx context.Context, authData *AuthData) (context.Context, error) {
+
+	if authData == nil {
+		return ctx, fmt.Errorf("%w: authData is nil", ErrServerInternal)
+	}
+
+	curLogger, err := GetCtxLogger(ctx)
+	if err != nil {
+		return ctx, fmt.Errorf("can't get logger %w", err)
+	}
+
+	resultCtx := context.WithValue(ctx, keyAuthData, authData)
+	resultCtx = context.WithValue(resultCtx, keyLogger, &userIDLogger{
+		internalLogger: curLogger,
+		userID:         strconv.Itoa(authData.UserID),
+	})
+	return resultCtx, nil
+}
+
+func GetRequestID(ctx context.Context) (uuid.UUID, error) {
+	if v := ctx.Value(keyRequestID); v != nil {
+		requestID, ok := v.(uuid.UUID)
+		if !ok {
+			return uuid.Nil, fmt.Errorf("%w: unexpected requestID type", ErrServerInternal)
+		}
+		return requestID, nil
+	}
+	return uuid.Nil, fmt.Errorf("%w: can't extract requestID", ErrServerInternal)
 }
 
 func GetAuthData(ctx context.Context) (*AuthData, error) {
-	if v := ctx.Value(KeyAuthData); v != nil {
+	if v := ctx.Value(keyAuthData); v != nil {
 		authData, ok := v.(*AuthData)
 		if !ok {
 			return nil, fmt.Errorf("%w: unexpected authData type", ErrUserIsNotAuthorized)
@@ -31,8 +77,16 @@ func GetAuthData(ctx context.Context) (*AuthData, error) {
 	return nil, fmt.Errorf("%w: can't extract authData", ErrUserIsNotAuthorized)
 }
 
-func GetLogger(ctx context.Context) (Logger, error) {
-	if v := ctx.Value(KeyLogger); v != nil {
+func GetUserID(ctx context.Context) (int, error) {
+	a, err := GetAuthData(ctx)
+	if err != nil {
+		return -1, fmt.Errorf("%w: can't get userID", err)
+	}
+	return a.UserID, nil
+}
+
+func GetCtxLogger(ctx context.Context) (Logger, error) {
+	if v := ctx.Value(keyLogger); v != nil {
 		lg, ok := v.(Logger)
 		if !ok {
 			return nil, fmt.Errorf("%w: unexpected logger type", ErrServerInternal)
@@ -42,32 +96,57 @@ func GetLogger(ctx context.Context) (Logger, error) {
 	return nil, fmt.Errorf("%w: can't extract logger", ErrServerInternal)
 }
 
-//go:generate mockgen -destination "../mocks/$GOFILE" -package mocks . Logger
-type Logger interface {
-	Infow(msg string, keysAndValues ...any)
-	Errorw(msg string, err error, keysAndValues ...any)
-}
-
-func newLogger(userID int, requestID uuid.UUID, zL *zap.SugaredLogger) Logger {
-	return &logger{
-		UserID:        userID,
-		RequestID:     requestID,
-		SugaredLogger: zL,
+func EnrichWithMainLogger(ctx context.Context) (context.Context, error) {
+	logger := GetMainLogger()
+	if logger == nil {
+		fmt.Printf("main logger is nil")
+		return ctx, fmt.Errorf("%w: main logger is nil", ErrServerInternal)
 	}
+
+	resultCtx := context.WithValue(ctx, keyLogger, logger)
+	return resultCtx, nil
 }
 
-type logger struct {
-	UserID    int
-	RequestID uuid.UUID
-	*zap.SugaredLogger
+var _ Logger = (*requestIDLogger)(nil)
+
+type requestIDLogger struct {
+	requestID      string
+	internalLogger Logger
 }
 
-func (l *logger) Infow(msg string, keysAndValues ...any) {
-	keysAndValues = append(keysAndValues, "userID", strconv.Itoa(l.UserID), "requestID", l.RequestID.String())
-	l.SugaredLogger.Infow(msg, keysAndValues...)
+func (l *requestIDLogger) Debugw(msg string, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, LoggerKeyRequestID, l.requestID)
+	l.internalLogger.Debugw(msg, keysAndValues...)
 }
 
-func (l *logger) Errorw(msg string, err error, keysAndValues ...any) {
-	keysAndValues = append(keysAndValues, "error", err.Error(), "userID", strconv.Itoa(l.UserID), "requestID", l.RequestID.String())
-	l.SugaredLogger.Infow(msg, keysAndValues...)
+func (l *requestIDLogger) Infow(msg string, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, LoggerKeyRequestID, l.requestID)
+	l.internalLogger.Infow(msg, keysAndValues...)
+}
+
+func (l *requestIDLogger) Errorw(msg string, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, LoggerKeyRequestID, l.requestID)
+	l.internalLogger.Infow(msg, keysAndValues...)
+}
+
+var _ Logger = (*userIDLogger)(nil)
+
+type userIDLogger struct {
+	userID         string
+	internalLogger Logger
+}
+
+func (l *userIDLogger) Infow(msg string, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, LoggerKeyUserID, l.userID)
+	l.internalLogger.Infow(msg, keysAndValues...)
+}
+
+func (l *userIDLogger) Debugw(msg string, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, LoggerKeyUserID, l.userID)
+	l.internalLogger.Infow(msg, keysAndValues...)
+}
+
+func (l *userIDLogger) Errorw(msg string, keysAndValues ...any) {
+	keysAndValues = append(keysAndValues, LoggerKeyUserID, l.userID)
+	l.internalLogger.Infow(msg, keysAndValues...)
 }
