@@ -48,6 +48,7 @@ func (ac *acService) GetStatus(ctx context.Context, orderNum domain.OrderNumber)
 		if err = json.Unmarshal(resp.Body(), &accrualData); err != nil {
 			return nil, fmt.Errorf("%w: %v", domain.ErrServerInternal, err.Error())
 		}
+		logger.Infow("acrual.GetStatus", "msg", fmt.Sprintf("order %v found", orderNum))
 		return &accrualData, nil
 	}
 

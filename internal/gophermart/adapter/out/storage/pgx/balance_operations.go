@@ -32,7 +32,7 @@ func (st *storage) Balance(ctx context.Context, userID int) (*domain.UserBalance
 			union
 			select balanceID, userID, current, withdrawn, release from balance
 			where userID=$1;`,
-		userID).Scan(&userBalance.BalanceID, &userBalance.UserID, &userBalance.Current, &userBalance.Release, &userBalance.Release); err == nil {
+		userID).Scan(&userBalance.BalanceID, &userBalance.UserID, &userBalance.Current, &userBalance.Withdrawn, &userBalance.Release); err == nil {
 		logger.Infow("storage.Balance", "status", "success")
 		return &userBalance, nil
 	} else {
@@ -136,7 +136,7 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 	defer tx.Rollback(ctx)
 
 	tx.Exec(ctx,
-		`insert into withdrawal(balancerId, number, sum, processed_at) values($1, $2, $3, $4)`,
+		`insert into withdrawal(balanceId, number, sum, processed_at) values($1, $2, $3, $4)`,
 		balance.BalanceID,
 		withdraw.Order,
 		withdraw.Sum,
