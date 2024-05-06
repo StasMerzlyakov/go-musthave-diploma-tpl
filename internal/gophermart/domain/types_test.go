@@ -66,7 +66,7 @@ func TestAccrualDataDeserialization(t *testing.T) {
 
 	var acrualData domain.AccrualData
 
-	err := json.Unmarshal([]byte(`{"number": "2377225624","status": "PROCESSED","accrual": 500}`), &acrualData)
+	err := json.Unmarshal([]byte(`{"order": "2377225624","status": "PROCESSED","accrual": 500}`), &acrualData)
 	require.NoError(t, err)
 	require.True(t, reflect.DeepEqual(domain.AccrualData{
 		Number:  "2377225624",
@@ -74,6 +74,6 @@ func TestAccrualDataDeserialization(t *testing.T) {
 		Accrual: domain.Float64Ptr(500),
 	}, acrualData))
 
-	err = json.Unmarshal([]byte(`{"number": "2377225624","status": "PROCESSEDDDD","accrual": 500}`), &acrualData)
+	err = json.Unmarshal([]byte(`{"order": "2377225624","status": "PROCESSEDDDD","accrual": 500}`), &acrualData)
 	require.ErrorIs(t, err, domain.ErrDataFormat)
 }

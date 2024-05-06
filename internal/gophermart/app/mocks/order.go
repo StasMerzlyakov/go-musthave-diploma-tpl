@@ -65,32 +65,18 @@ func (mr *MockOrderStorageMockRecorder) Orders(arg0, arg1 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Orders", reflect.TypeOf((*MockOrderStorage)(nil).Orders), arg0, arg1)
 }
 
-// UpdateBatch mocks base method.
-func (m *MockOrderStorage) UpdateBatch(arg0 context.Context, arg1 []domain.OrderData) error {
+// UpdateOrders mocks base method.
+func (m *MockOrderStorage) UpdateOrders(arg0 context.Context, arg1 []domain.OrderData) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateBatch", arg0, arg1)
+	ret := m.ctrl.Call(m, "UpdateOrders", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateBatch indicates an expected call of UpdateBatch.
-func (mr *MockOrderStorageMockRecorder) UpdateBatch(arg0, arg1 interface{}) *gomock.Call {
+// UpdateOrders indicates an expected call of UpdateOrders.
+func (mr *MockOrderStorageMockRecorder) UpdateOrders(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBatch", reflect.TypeOf((*MockOrderStorage)(nil).UpdateBatch), arg0, arg1)
-}
-
-// UpdateOrder mocks base method.
-func (m *MockOrderStorage) UpdateOrder(arg0 context.Context, arg1 domain.OrderNumber, arg2 domain.OrderStatus, arg3 *float64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOrder", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateOrder indicates an expected call of UpdateOrder.
-func (mr *MockOrderStorageMockRecorder) UpdateOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrder", reflect.TypeOf((*MockOrderStorage)(nil).UpdateOrder), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOrders", reflect.TypeOf((*MockOrderStorage)(nil).UpdateOrders), arg0, arg1)
 }
 
 // Upload mocks base method.

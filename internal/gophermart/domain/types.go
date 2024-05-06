@@ -78,7 +78,7 @@ type WithdrawalData struct {
 }
 
 type AccrualData struct {
-	Number  OrderNumber   `json:"number"`
+	Number  OrderNumber   `json:"order"`
 	Status  AccrualStatus `json:"status"`
 	Accrual *float64      `jsin:"accrual,omitempty"`
 }

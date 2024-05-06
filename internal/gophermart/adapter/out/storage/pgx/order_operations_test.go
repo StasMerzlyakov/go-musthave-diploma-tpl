@@ -98,7 +98,14 @@ func TestOrderFunctions(t *testing.T) {
 	// require.True(t, time.Time(now).Equal(time.Time(oD.UploadedAt)))
 
 	accrualVal := 10.9
-	err = storage.UpdateOrder(loggedCtx, orderNum, domain.OrderStratusProcessing, &accrualVal)
+	orders := []domain.OrderData{
+		{
+			Number:  orderNum,
+			Status:  domain.OrderStratusProcessing,
+			Accrual: domain.Float64Ptr(accrualVal),
+		},
+	}
+	err = storage.UpdateOrders(loggedCtx, orders)
 	require.NoError(t, err)
 
 	orderDatas, err = storage.Orders(loggedCtx, user1ID)
@@ -159,6 +166,6 @@ func TestOrderFunctions(t *testing.T) {
 		Accrual: domain.Float64Ptr(65.),
 	}
 
-	err = storage.UpdateBatch(loggedCtx, []domain.OrderData{ordData1, ordData2})
+	err = storage.UpdateOrders(loggedCtx, []domain.OrderData{ordData1, ordData2})
 	require.NoError(t, err)
 }

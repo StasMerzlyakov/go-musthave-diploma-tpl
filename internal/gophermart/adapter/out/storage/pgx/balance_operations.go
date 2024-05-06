@@ -32,7 +32,7 @@ func (st *storage) Balance(ctx context.Context, userID int) (*domain.UserBalance
 			union
 			select balanceID, userID, current, withdrawn, release from balance
 			where userID=$1;`,
-		userID).Scan(&userBalance.BalanceID, &userBalance.UserID, &userBalance.Current, &userBalance.Release, &userBalance.Release); err == nil {
+		userID).Scan(&userBalance.BalanceID, &userBalance.UserID, &userBalance.Current, &userBalance.Withdrawn, &userBalance.Release); err == nil {
 		logger.Infow("storage.Balance", "status", "success")
 		return &userBalance, nil
 	} else {
@@ -51,12 +51,12 @@ func (st *storage) UpdateBalanceByOrder(ctx context.Context, balance *domain.Use
 
 	if balance == nil {
 		logger.Errorw("storage.UpdateBalanceByOrder", "err", "balance is nil")
-		return fmt.Errorf("%w: balance is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: balance is nil", domain.ErrServerImplementationError)
 	}
 
 	if orderData == nil {
 		logger.Errorw("storage.UpdateBalanceByOrder", "err", "orderData is nil")
-		return fmt.Errorf("%w: orderData is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: orderData is nil", domain.ErrServerImplementationError)
 	}
 
 	tx, err := st.pPool.Begin(ctx)
@@ -118,12 +118,12 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 
 	if balance == nil {
 		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "balance is nil")
-		return fmt.Errorf("%w: balance is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: balance is nil", domain.ErrServerImplementationError)
 	}
 
 	if withdraw == nil {
 		logger.Errorw("storage.UpdateBalanceByWithdraw", "err", "withdraw is nil")
-		return fmt.Errorf("%w: withdraw is nil", domain.ErrServerInternal)
+		return fmt.Errorf("%w: withdraw is nil", domain.ErrServerImplementationError)
 	}
 
 	tx, err := st.pPool.Begin(ctx)
@@ -136,7 +136,7 @@ func (st *storage) UpdateBalanceByWithdraw(ctx context.Context, balance *domain.
 	defer tx.Rollback(ctx)
 
 	tx.Exec(ctx,
-		`insert into withdrawal(balancerId, number, sum, processed_at) values($1, $2, $3, $4)`,
+		`insert into withdrawal(balanceId, number, sum, processed_at) values($1, $2, $3, $4)`,
 		balance.BalanceID,
 		withdraw.Order,
 		withdraw.Sum,

@@ -98,7 +98,7 @@ func main() {
 		r.Post("/orders", middleware.ConveyorFunc(horder.CreateHandler(order), authMW))
 
 		r.Get("/balance", middleware.ConveyorFunc(hbalance.GetHandler(balance), authMW))
-		r.Post("/withdraw", middleware.ConveyorFunc(hbalance.WithdrawHandler(balance), authMW))
+		r.Post("/balance/withdraw", middleware.ConveyorFunc(hbalance.WithdrawHandler(balance), authMW))
 
 		r.Get("/withdrawals", middleware.ConveyorFunc(hbalance.GetWithdrawals(balance), authMW))
 	})
