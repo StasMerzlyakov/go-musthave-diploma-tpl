@@ -299,12 +299,7 @@ func (ord *order) PoolAcrualSystem(ctx context.Context) {
 				ord.poolOrders(ctx, ordNumChan)
 			}()
 
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				ord.orderStatusUpdater(ctx, acrualDataChan)
-			}()
-
+			// api системы начисления баллов позволяет обращаться только по одному номеру, поэтому пулим в несколько потоков
 			for i := 0; i < ord.processingWorkerCount; i++ {
 				wg.Add(1)
 				go func() {
@@ -313,6 +308,11 @@ func (ord *order) PoolAcrualSystem(ctx context.Context) {
 				}()
 			}
 
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				ord.orderStatusUpdater(ctx, acrualDataChan)
+			}()
 		}()
 	})
 }

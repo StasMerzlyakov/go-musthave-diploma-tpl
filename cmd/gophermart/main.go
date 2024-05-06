@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/StasMerzlyakov/gophermart/internal/config"
 	"github.com/StasMerzlyakov/gophermart/internal/gophermart/adapter/in/http/middleware"
@@ -123,7 +124,10 @@ func main() {
 
 	defer func() {
 		cancelFn()
-		srv.Shutdown(srvCtx)
+		shutdownCtx, shutDownFn := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutDownFn()
+		srv.Shutdown(shutdownCtx)
+		<-shutdownCtx.Done()
 	}()
 	<-exit
 }
