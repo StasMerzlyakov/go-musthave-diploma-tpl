@@ -18,6 +18,8 @@
 - https://github.com/ganpatagarwal/chi-swagger
 
 
+TODO - обработка 409 ошибки, zap.With
+
 
 
 
